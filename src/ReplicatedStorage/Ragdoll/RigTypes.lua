@@ -19,13 +19,13 @@ local HAND_FOOT_LIMITS = {
 }
 
 local ELBOW_LIMITS = {
-	UpperAngle = 30;
+	UpperAngle = 10;
 	TwistLowerAngle = 0;
 	TwistUpperAngle = 120;
 }
 
 local KNEE_LIMITS = {
-	UpperAngle = 30;
+	UpperAngle = 10;
 	TwistLowerAngle = -120;
 	TwistUpperAngle = 0;
 }
