@@ -14,15 +14,15 @@ local StarterGui = game:GetService("StarterGui")
 local RigTypes = require(script:WaitForChild("RigTypes"))
 
 if RunService:IsServer() then
-		
+
 	-- Used for telling the client to set their own character to Physics mode:
 	local event = Instance.new("RemoteEvent")
 	event.Name = EVENT_NAME
 	event.Parent = script
-	
+
 	-- Whether players ragdoll by default: (true = ragdoll, false = fall into pieces)
 	local playerDefault = false
-	
+
 	-- Activating ragdoll on an arbitrary model with a Humanoid:
 	local function activateRagdoll(model, humanoid)
 		assert(humanoid:IsDescendantOf(model))
@@ -30,7 +30,7 @@ if RunService:IsServer() then
 			return
 		end
 		CollectionService:AddTag(model, RAGDOLLED_TAG)
-		
+
 		-- Propagate to player if applicable:
 		local player = Players:GetPlayerFromCharacter(model)
 		if player then
@@ -38,10 +38,10 @@ if RunService:IsServer() then
 		elseif model.PrimaryPart then
 			event:FireAllClients(false, model, humanoid)
 		end
-		
+
 		-- Turn into loose body:
 		humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-		
+
 		-- Instantiate BallSocketConstraints:
 		local attachments = RigTypes.getAttachments(model, humanoid.RigType)
 		for name, objects in pairs(attachments) do
@@ -59,7 +59,7 @@ if RunService:IsServer() then
 				constraint.Parent = parent
 			end
 		end
-		
+
 		-- Instantiate NoCollisionConstraints:
 		local parts = RigTypes.getNoCollisions(model, humanoid.RigType)
 		for _, objects in pairs(parts) do
@@ -69,7 +69,7 @@ if RunService:IsServer() then
 			constraint.Part1 = objects[2]
 			constraint.Parent = objects[1]
 		end
-		
+
 		-- Destroy all regular joints:
 		for _, motor in pairs(model:GetDescendants()) do
 			if motor:IsA("Motor6D") then
@@ -77,7 +77,7 @@ if RunService:IsServer() then
 			end
 		end
 	end
-	
+
 	-- Set player Humanoid properties:
 	local function onHumanoidAdded(character, humanoid)
 		humanoid.BreakJointsOnDeath = not playerDefault
@@ -91,7 +91,7 @@ if RunService:IsServer() then
 			end
 		)
 	end
-	
+
 	-- Track existing and new player Humanoids:
 	local function onCharacterAdded(character)
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
@@ -107,7 +107,7 @@ if RunService:IsServer() then
 			)
 		end
 	end
-	
+
 	-- Track existing and new player characters:
 	local function onPlayerAdded(player)
 		player.CharacterAdded:Connect(onCharacterAdded)
@@ -115,36 +115,36 @@ if RunService:IsServer() then
 			onCharacterAdded(player.Character)
 		end
 	end
-	
+
 	-- Track all players:
 	Players.PlayerAdded:Connect(onPlayerAdded)
 	for _, player in pairs(Players:GetPlayers()) do
 		onPlayerAdded(player)
 	end
-	
+
 	-- Activating the ragdoll on a specific model
 	function Ragdoll:Activate(model)
 		if typeof(model) ~= "Instance" or not model:IsA("Model") then
 			error("bad argument #1 to 'Activate' (Model expected, got " .. typeof(model) .. ")", 2)
 		end
-		
+
 		-- Model must have a humanoid:
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
 		if not humanoid then
 			return warn("[Ragdoll] Could not ragdoll " .. model:GetFullName() .. " because it has no Humanoid")
 		end
-		
+
 		activateRagdoll(model, humanoid)
 	end
-	
+
 	-- Setting whether players ragdoll when dying by default: (true = ragdoll, false = fall into pieces)
 	function Ragdoll:SetPlayerDefault(enabled)
 		if enabled ~= nil and typeof(enabled) ~= "boolean" then
 			error("bad argument #1 to 'SetPlayerDefault' (boolean expected, got " .. typeof(enabled) .. ")", 2)
 		end
-		
+
 		playerDefault = enabled
-		
+
 		-- Update BreakJointsOnDeath for all alive characters:
 		for _, player in pairs(Players:GetPlayers()) do
 			if player.Character then
@@ -155,9 +155,9 @@ if RunService:IsServer() then
 			end
 		end
 	end
-	
+
 else -- Client
-	
+
 	-- Client sets their own character to Physics mode when told to:
 	script:WaitForChild(EVENT_NAME).OnClientEvent:Connect(
 		function(isSelf, model, humanoid)
@@ -170,13 +170,13 @@ else -- Client
 			humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 		end
 	)
-	
+
 	-- Other API not available from client-side:
-	
+
 	function Ragdoll:Activate()
 		error("Ragdoll::Activate cannot be used from the client", 2)
 	end
-	
+
 	function Ragdoll:SetPlayerDefault()
 		error("Ragdoll::SetPlayerDefault cannot be used from the client", 2)
 	end
