@@ -10,7 +10,6 @@ local RAGDOLLED_TAG = "__Ragdoll_Active"
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
-local StarterGui = game:GetService("StarterGui")
 local RigTypes = require(script:WaitForChild("RigTypes"))
 
 if RunService:IsServer() then

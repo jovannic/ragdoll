@@ -236,22 +236,16 @@ end
 function RigTypes.getR6NoCollisions(model)
 	local list = {}
 
-	local function addPair(pair)
-		local part0 = model:FindFirstChild(pair[1])
-		local part1 = model:FindFirstChild(pair[2])
+	local function addPair(a, b)
+		local part0 = model:FindFirstChild(a)
+		local part1 = model:FindFirstChild(b)
 
 		if part0 and part1 then
 			table.insert(list, {part0, part1})
 		end
 	end
 
-	addPair({"Head", "Torso"})
-	addPair({"Left Arm", "Torso"})
-	addPair({"Right Arm", "Torso"})
-	addPair({"Left Leg", "Torso"})
-	addPair({"Right Leg", "Torso"})
-
-	addPair({"Left Leg", "Right Leg"})
+	addPair("Left Leg", "Right Leg")
 
 	return list
 end
@@ -260,57 +254,42 @@ end
 function RigTypes.getR15NoCollisions(model)
 	local list = {}
 
-	local function addPair(pair)
-		local part0 = model:FindFirstChild(pair[1])
-		local part1 = model:FindFirstChild(pair[2])
+	local function addPair(a, b)
+		local part0 = model:FindFirstChild(a)
+		local part1 = model:FindFirstChild(b)
 
 		if part0 and part1 then
 			table.insert(list, {part0, part1})
 		end
 	end
 
-	addPair({"Head", "UpperTorso"})
-	addPair({"UpperTorso", "LowerTorso"})
+	addPair("LowerTorso", "LeftUpperArm")
+	addPair("LeftUpperArm", "LeftHand")
 
-	addPair({"UpperTorso", "LeftUpperArm"})
-	addPair({"LowerTorso", "LeftUpperArm"})
-	addPair({"LeftUpperArm", "LeftLowerArm"})
-	addPair({"LeftLowerArm", "LeftHand"})
-	addPair({"LeftUpperArm", "LeftHand"})
+	addPair("LowerTorso", "RightUpperArm")
+	addPair("RightUpperArm", "RightHand")
 
-	addPair({"UpperTorso", "RightUpperArm"})
-	addPair({"LowerTorso", "RightUpperArm"})
-	addPair({"RightUpperArm", "RightLowerArm"})
-	addPair({"RightLowerArm", "RightHand"})
-	addPair({"RightUpperArm", "RightHand"})
+	addPair("LeftUpperLeg", "RightUpperLeg")
 
-	addPair({"LeftUpperLeg", "RightUpperLeg"})
+	addPair("UpperTorso", "RightUpperLeg")
+	addPair("RightUpperLeg", "RightFoot")
 
-	addPair({"UpperTorso", "RightUpperLeg"})
-	addPair({"LowerTorso", "RightUpperLeg"})
-	addPair({"RightUpperLeg", "RightLowerLeg"})
-	addPair({"RightLowerLeg", "RightFoot"})
-	addPair({"RightUpperLeg", "RightFoot"})
-
-	addPair({"UpperTorso", "LeftUpperLeg"})
-	addPair({"LowerTorso", "LeftUpperLeg"})
-	addPair({"LeftUpperLeg", "LeftLowerLeg"})
-	addPair({"LeftLowerLeg", "LeftFoot"})
-	addPair({"LeftUpperLeg", "LeftFoot"})
+	addPair("UpperTorso", "LeftUpperLeg")
+	addPair("LeftUpperLeg", "LeftFoot")
 
 	-- Support weird R15 rigs
-	addPair({"UpperTorso", "LeftLowerLeg"})
-	addPair({"UpperTorso", "RightLowerLeg"})
-	addPair({"LowerTorso", "LeftLowerLeg"})
-	addPair({"LowerTorso", "RightLowerLeg"})
+	addPair("UpperTorso", "LeftLowerLeg")
+	addPair("UpperTorso", "RightLowerLeg")
+	addPair("LowerTorso", "LeftLowerLeg")
+	addPair("LowerTorso", "RightLowerLeg")
 
-	addPair({"UpperTorso", "LeftLowerArm"})
-	addPair({"UpperTorso", "RightLowerArm"})
+	addPair("UpperTorso", "LeftLowerArm")
+	addPair("UpperTorso", "RightLowerArm")
 
 	local upperTorso = model:FindFirstChild("UpperTorso")
 	if upperTorso and upperTorso.Size.x <= 1.5 then
-		addPair({"Head", "LeftUpperArm"})
-		addPair({"Head", "RightUpperArm"})
+		addPair("Head", "LeftUpperArm")
+		addPair("Head", "RightUpperArm")
 	end
 
 	return list
