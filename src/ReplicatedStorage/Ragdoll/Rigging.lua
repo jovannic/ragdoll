@@ -60,7 +60,7 @@ local R6_HIP_LIMITS = {
 	TwistUpperAngle = 15;
 }
 
--- { { joint, child, parent }, ... }
+-- { { parentPart, childPart, attachmentName, limits }, ... }
 local R15_RAGDOLL_RIG = {
 	{"UpperTorso", "Head", "NeckRigAttachment", HEAD_LIMITS},
 
