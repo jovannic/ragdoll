@@ -105,6 +105,9 @@ local R15_NO_COLLIDES = {
 
 	{"UpperTorso", "LeftLowerArm"},
 	{"UpperTorso", "RightLowerArm"},
+
+	{"Head", "LeftUpperArm"},
+	{"Head", "RightUpperArm"},
 }
 local R15_MOTOR6DS = {
 	{"Neck", "Head"},
@@ -221,11 +224,6 @@ function Rigging.createJoints(model, rigType)
 		createRigJoints(model, R15_RAGDOLL_RIG)
 		for _, params in ipairs(R15_NO_COLLIDES) do
 			createNoCollide(model, unpack(params))
-		end
-		local upperTorso = model:FindFirstChild("UpperTorso")
-		if upperTorso and upperTorso.Size.x <= 1.5 then
-			createNoCollide(model, "Head", "LeftUpperArm")
-			createNoCollide(model, "Head", "RightUpperArm")
 		end
 	else
 		assert(false) -- Unknown rig type
