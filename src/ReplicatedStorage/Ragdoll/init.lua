@@ -11,7 +11,7 @@ local RigTypes = require(script:WaitForChild("RigTypes"))
 local function breakMotors(model)
 	-- Destroy all regular joints:
 	for _, motor in pairs(model:GetDescendants()) do
-		if motor:IsA("Motor6D") and motor.Name ~= "Root" then
+		if motor:IsA("Motor6D") and motor.Name ~= "Root" and motor.Name ~= "RootJoint" then
 			motor:Destroy()
 		end
 	end
