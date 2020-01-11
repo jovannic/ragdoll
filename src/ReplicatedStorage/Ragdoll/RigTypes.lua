@@ -25,7 +25,7 @@ local ELBOW_LIMITS = {
 }
 
 local KNEE_LIMITS = {
-	UpperAngle = 10;
+	UpperAngle = 5;
 	TwistLowerAngle = -120;
 	TwistUpperAngle = 0;
 }
