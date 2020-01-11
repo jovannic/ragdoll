@@ -6,63 +6,23 @@ local Ragdoll = {}
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local RigTypes = require(script:WaitForChild("RigTypes"))
-
-local function breakMotors(model)
-	-- Destroy all regular joints:
-	for _, motor in pairs(model:GetDescendants()) do
-		if motor:IsA("Motor6D") and motor.Name ~= "Root" and motor.Name ~= "RootJoint" then
-			motor:Destroy()
-		end
-	end
-	model.HumanoidRootPart.CanCollide = false
-end
+local Rigging = require(script:WaitForChild("Rigging"))
 
 if RunService:IsServer() then
 
 	-- Whether players ragdoll by default: (true = ragdoll, false = fall into pieces)
 	local playerDefault = false
 
-	local function createRagdoll(model, humanoid)
-		-- Instantiate BallSocketConstraints:
-		local attachments = RigTypes.getAttachments(model, humanoid.RigType)
-		for name, objects in pairs(attachments) do
-			local parent = model:FindFirstChild(name)
-			if parent then
-				local constraint = Instance.new("BallSocketConstraint")
-				constraint.Name = "RagdollBallSocketConstraint"
-				constraint.Attachment0 = objects.attachment0
-				constraint.Attachment1 = objects.attachment1
-				constraint.LimitsEnabled = true
-				constraint.UpperAngle = objects.limits.UpperAngle
-				constraint.TwistLimitsEnabled = true
-				constraint.TwistLowerAngle = objects.limits.TwistLowerAngle
-				constraint.TwistUpperAngle = objects.limits.TwistUpperAngle
-				constraint.Parent = parent
-			end
-		end
-
-		-- Instantiate NoCollisionConstraints:
-		local parts = RigTypes.getNoCollisions(model, humanoid.RigType)
-		for _, objects in pairs(parts) do
-			local constraint = Instance.new("NoCollisionConstraint")
-			constraint.Name = "RagdollNoCollisionConstraint"
-			constraint.Part0 = objects[1]
-			constraint.Part1 = objects[2]
-			constraint.Parent = objects[1]
-		end
-	end
-
 	-- Set player Humanoid properties:
 	local function onHumanoidAdded(character, humanoid)
-		createRagdoll(character, humanoid)
+		Rigging.createJoints(character, humanoid.RigType)
 		humanoid.BreakJointsOnDeath = not playerDefault
 		humanoid.Died:Connect(
 			function()
 				if playerDefault then
 					-- Ragdoll them:
 					humanoid.BreakJointsOnDeath = false
-					breakMotors(character)
+					Rigging.breakMotors(character, humanoid.RigType)
 				end
 			end
 		)
@@ -123,7 +83,7 @@ else -- Client
 	local function onHumanoidAdded(character, humanoid)
 		humanoid.Died:Connect(
 			function()
-				breakMotors(character)
+				Rigging.breakMotors(character, humanoid.RigType)
 			end
 		)
 	end
