@@ -208,9 +208,6 @@ end
 
 function Rigging.createJoints(model, rigType)
 	if rigType == Enum.HumanoidRigType.R6 then
-		createRigJoints(model, R6_RAGDOLL_RIG)
-		createNoCollide(model, "Left Leg", "Right Leg")
-	elseif rigType == Enum.HumanoidRigType.R15 then
 		for _, attachmentParams in ipairs(R6_ADDITIONAL_ATTACHMENTS) do
 			local part = model:FindFirstChild(attachmentParams[1])
 			if part then
@@ -221,6 +218,11 @@ function Rigging.createJoints(model, rigType)
 			end
 		end
 
+		createRigJoints(model, R6_RAGDOLL_RIG)
+		createNoCollide(model, "Left Leg", "Right Leg")
+		createNoCollide(model, "Head", "Right Arm")
+		createNoCollide(model, "Head", "Left Arm")
+	elseif rigType == Enum.HumanoidRigType.R15 then
 		createRigJoints(model, R15_RAGDOLL_RIG)
 		for _, params in ipairs(R15_NO_COLLIDES) do
 			createNoCollide(model, unpack(params))
