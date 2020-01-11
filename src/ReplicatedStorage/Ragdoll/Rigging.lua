@@ -206,6 +206,19 @@ local function createNoCollide(model, part0Name, part1Name)
 	end
 end
 
+local function disableMotorSet(model, motorSet)
+	-- Destroy all regular joints:
+	for _, params in ipairs(motorSet) do
+		local part = model:FindFirstChild(params[2])
+		if part then
+			local motor = part:FindFirstChild(params[1])
+			if motor and motor:IsA("Motor6D") then
+				motor:Destroy()
+			end
+		end
+	end
+end
+
 function Rigging.createJoints(model, rigType)
 	if rigType == Enum.HumanoidRigType.R6 then
 		for _, attachmentParams in ipairs(R6_ADDITIONAL_ATTACHMENTS) do
@@ -237,24 +250,12 @@ function Rigging.breakMotors(model, rigType)
 	-- character stays consistent when we break joints on the client before the server can do the
 	-- same on a client-side triggered death.
 
-	local motorSet
 	if rigType == Enum.HumanoidRigType.R6 then
-		motorSet = R6_MOTOR6DS
+		disableMotorSet(model, R6_MOTOR6DS)
 	elseif rigType == Enum.HumanoidRigType.R15 then
-		motorSet = R15_MOTOR6DS
+		disableMotorSet(model, R15_MOTOR6DS)
 	else
 		assert(false) -- Unknown rig type
-	end
-
-	-- Destroy all regular joints:
-	for _, params in ipairs(motorSet) do
-		local part = model:FindFirstChild(params[2])
-		if part then
-			local motor = part:FindFirstChild(params[1])
-			if motor and motor:IsA("Motor6D") then
-				motor:Destroy()
-			end
-		end
 	end
 
 	-- Set the root part to non-collide
