@@ -39,7 +39,7 @@ local SHOULDER_LIMITS = {
 local HIP_LIMITS = {
 	UpperAngle = 40;
 	TwistLowerAngle = -5;
-	TwistUpperAngle = 150;
+	TwistUpperAngle = 130;
 }
 
 local R6_HEAD_LIMITS = {
@@ -55,9 +55,10 @@ local R6_SHOULDER_LIMITS = {
 }
 
 local R6_HIP_LIMITS = {
-	UpperAngle = 60;
-	TwistLowerAngle = -5;
-	TwistUpperAngle = 120;
+	UpperAngle = 40;
+	TwistLowerAngle = -120;
+	TwistUpperAngle = 15;
+}
 }
 
 local function createJointData(attach0, attach1, limits)
