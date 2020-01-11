@@ -241,7 +241,7 @@ function Rigging.createJoints(model, rigType)
 			createNoCollide(model, unpack(params))
 		end
 	else
-		assert(false) -- Unknown rig type
+		error("unknown rig type")
 	end
 end
 
@@ -255,7 +255,7 @@ function Rigging.breakMotors(model, rigType)
 	elseif rigType == Enum.HumanoidRigType.R15 then
 		disableMotorSet(model, R15_MOTOR6DS)
 	else
-		assert(false) -- Unknown rig type
+		error("unknown rig type")
 	end
 
 	-- Set the root part to non-collide
