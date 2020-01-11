@@ -176,7 +176,7 @@ function RigTypes.getR15Attachments(model)
 
 		LowerTorso = query(
 			{"UpperTorso", "WaistRigAttachment"},
-			{"LowerTorso", "RootRigAttachment"},
+			{"LowerTorso", "WaistRigAttachment"},
 			LOWER_TORSO_LIMITS),
 
 		LeftUpperArm = query(
