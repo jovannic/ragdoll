@@ -84,8 +84,48 @@ else -- Client
 		humanoid.Died:Connect(
 			function()
 				Rigging.breakMotors(character, humanoid.RigType)
-			end
-		)
+
+				wait(0.9)
+				local gravityScale = workspace.Gravity / 192.6
+				-- TODO: friction lerp
+				local frictionJoints = {}
+				for _, v in pairs(character:GetDescendants()) do
+					if v:IsA("AngularVelocity") then
+						local current = v.MaxTorque
+						local next = (v.Parent.Name == "UpperTorso" and 0.5 or 0.05) * current * gravityScale
+						frictionJoints[v] = { current, next }
+					end
+				end
+				spawn(function()
+					local tscale = 1 / 0.3
+					local t = 0
+					while t < 1 do
+						local dt = RunService.Heartbeat:Wait()
+						t = math.min(t + dt * tscale, 1)
+						for k, v in pairs(frictionJoints) do
+							local a, b = unpack(v)
+							k.MaxTorque = (1 - t) * a + t * b
+						end
+					end
+				end)
+
+				wait(1)
+				local parts = {}
+				for _, instance in pairs(character:GetDescendants()) do
+					if instance:IsA("BasePart") or instance:IsA("Decal") then
+						table.insert(parts, instance)
+					end
+				end
+				local fadeTime = 0.3
+				local t = 0
+				while t < fadeTime do
+					local dt = RunService.Heartbeat:Wait()
+					for _, p in pairs(parts) do
+						p.Transparency = p.Transparency * 1.02 + dt / fadeTime
+					end
+					t = t + dt
+				end
+			end)
 	end
 
 	-- Track existing and new player Humanoids:

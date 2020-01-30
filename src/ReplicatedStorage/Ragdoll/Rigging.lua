@@ -1,15 +1,17 @@
 local Rigging = {}
 
 local HEAD_LIMITS = {
-	UpperAngle = 60;
-	TwistLowerAngle = -60;
-	TwistUpperAngle = 60;
+	UpperAngle = 45;
+	TwistLowerAngle = -40;
+	TwistUpperAngle = 40;
+	FrictionTorque = 400;
 }
 
-local LOWER_TORSO_LIMITS = {
+local WAIST_LIMITS = {
 	UpperAngle = 20;
-	TwistLowerAngle = -30;
-	TwistUpperAngle = 60;
+	TwistLowerAngle = -40;
+	TwistUpperAngle = 20;
+	FrictionTorque = 750;
 }
 
 local HAND_FOOT_LIMITS = {
@@ -39,7 +41,7 @@ local SHOULDER_LIMITS = {
 local HIP_LIMITS = {
 	UpperAngle = 40;
 	TwistLowerAngle = -5;
-	TwistUpperAngle = 130;
+	TwistUpperAngle = 100;
 }
 
 local R6_HEAD_LIMITS = {
@@ -64,7 +66,7 @@ local R6_HIP_LIMITS = {
 local R15_RAGDOLL_RIG = {
 	{"UpperTorso", "Head", "NeckRigAttachment", HEAD_LIMITS},
 
-	{"UpperTorso", "LowerTorso", "WaistRigAttachment", LOWER_TORSO_LIMITS},
+	{"LowerTorso", "UpperTorso", "WaistRigAttachment", WAIST_LIMITS},
 
 	{"UpperTorso", "LeftUpperArm", "LeftShoulderRigAttachment", SHOULDER_LIMITS},
 	{"LeftUpperArm", "LeftLowerArm", "LeftElbowRigAttachment", ELBOW_LIMITS},
@@ -109,10 +111,11 @@ local R15_NO_COLLIDES = {
 	{"Head", "LeftUpperArm"},
 	{"Head", "RightUpperArm"},
 }
+-- Tree order
 local R15_MOTOR6DS = {
-	{"Neck", "Head"},
+	{"Waist", "UpperTorso"},
 
-	{"Waist", "LowerTorso"},
+	{"Neck", "Head"},
 
 	{"LeftShoulder", "LeftUpperArm"},
 	{"LeftElbow", "LeftLowerArm"},
@@ -184,6 +187,16 @@ local function createRigJoint(model, part0Name, part1Name, attachmentName, limit
 			constraint.TwistLowerAngle = limits.TwistLowerAngle
 			constraint.TwistUpperAngle = limits.TwistUpperAngle
 			constraint.Parent = part1
+
+			local reduce = workspace.Gravity / 192.6
+
+			local torque = Instance.new("AngularVelocity")
+			torque.Name = "RagdollFriction"
+			torque.Attachment0 = a0
+			torque.Attachment1 = a1
+			torque.MaxTorque = 500 * reduce
+			torque.RelativeTo = "Attachment1"
+			torque.Parent = part1
 		end
 	end
 end
@@ -207,15 +220,25 @@ local function createNoCollide(model, part0Name, part1Name)
 end
 
 local function disableMotorSet(model, motorSet)
+	local motors = {}
 	-- Destroy all regular joints:
 	for _, params in ipairs(motorSet) do
 		local part = model:FindFirstChild(params[2])
 		if part then
 			local motor = part:FindFirstChild(params[1])
 			if motor and motor:IsA("Motor6D") then
+				table.insert(motors, motor)
 				motor:Destroy()
 			end
 		end
+	end
+	return motors
+end
+
+local function applyAngularImpulse(model, partName, impulse)
+	local part = mode:FindFirstChild(partName)
+	if part then
+		part.RotVelocity = part.RotVelocity + impulse
 	end
 end
 
@@ -235,6 +258,8 @@ function Rigging.createJoints(model, rigType)
 		createNoCollide(model, "Left Leg", "Right Leg")
 		createNoCollide(model, "Head", "Right Arm")
 		createNoCollide(model, "Head", "Left Arm")
+		-- createNoCollide(model, "Left Arm", "Left Leg")
+		-- createNoCollide(model, "Right Arm", "Right Leg")
 	elseif rigType == Enum.HumanoidRigType.R15 then
 		createRigJoints(model, R15_RAGDOLL_RIG)
 		for _, params in ipairs(R15_NO_COLLIDES) do
@@ -252,8 +277,15 @@ function Rigging.breakMotors(model, rigType)
 
 	if rigType == Enum.HumanoidRigType.R6 then
 		disableMotorSet(model, R6_MOTOR6DS)
+		applyAngularImpulse(model, "Right Arm", Vector3.new(0, 0, 50))
+		applyAngularImpulse(model, "Left Arm", Vector3.new(0, 0, -50))
+		applyAngularImpulse(model, "Torso", Vector3.new(50, 0, 0))
 	elseif rigType == Enum.HumanoidRigType.R15 then
-		disableMotorSet(model, R15_MOTOR6DS)
+		local motors = disableMotorSet(model, R15_MOTOR6DS)
+		local animator = model:FindFirstChildWhichIsA("Animator", true)
+		if animator then
+			animator:ApplyVelocities(motors)
+		end
 	else
 		error("unknown rig type")
 	end
