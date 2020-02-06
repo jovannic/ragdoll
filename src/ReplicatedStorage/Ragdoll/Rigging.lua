@@ -14,16 +14,22 @@ local WAIST_LIMITS = {
 	FrictionTorque = 750;
 }
 
-local HAND_FOOT_LIMITS = {
+local ANKLE_LIMITS = {
 	UpperAngle = 10;
 	TwistLowerAngle = -10;
 	TwistUpperAngle = 10;
 }
 
 local ELBOW_LIMITS = {
-	UpperAngle = 10;
+	UpperAngle = 60; -- lower arm wrist twist
 	TwistLowerAngle = 0;
 	TwistUpperAngle = 120;
+}
+
+local WRIST_LIMITS = {
+	UpperAngle = 30;
+	TwistLowerAngle = -10;
+	TwistUpperAngle = 10;
 }
 
 local KNEE_LIMITS = {
@@ -70,19 +76,19 @@ local R15_RAGDOLL_RIG = {
 
 	{"UpperTorso", "LeftUpperArm", "LeftShoulderRigAttachment", SHOULDER_LIMITS},
 	{"LeftUpperArm", "LeftLowerArm", "LeftElbowRigAttachment", ELBOW_LIMITS},
-	{"LeftLowerArm", "LeftHand", "LeftWristRigAttachment", HAND_FOOT_LIMITS},
+	{"LeftLowerArm", "LeftHand", "LeftWristRigAttachment", WRIST_LIMITS},
 
 	{"UpperTorso", "RightUpperArm", "RightShoulderRigAttachment", SHOULDER_LIMITS},
 	{"RightUpperArm", "RightLowerArm", "RightElbowRigAttachment", ELBOW_LIMITS},
-	{"RightLowerArm", "RightHand", "RightWristRigAttachment", HAND_FOOT_LIMITS},
+	{"RightLowerArm", "RightHand", "RightWristRigAttachment", WRIST_LIMITS},
 
 	{"LowerTorso", "LeftUpperLeg", "LeftHipRigAttachment", HIP_LIMITS},
 	{"LeftUpperLeg", "LeftLowerLeg", "LeftKneeRigAttachment", KNEE_LIMITS},
-	{"LeftLowerLeg", "LeftFoot", "LeftAnkleRigAttachment", HAND_FOOT_LIMITS},
+	{"LeftLowerLeg", "LeftFoot", "LeftAnkleRigAttachment", ANKLE_LIMITS},
 
 	{"LowerTorso", "RightUpperLeg", "RightHipRigAttachment", HIP_LIMITS},
 	{"RightUpperLeg", "RightLowerLeg", "RightKneeRigAttachment", KNEE_LIMITS},
-	{"RightLowerLeg", "RightFoot", "RightAnkleRigAttachment", HAND_FOOT_LIMITS},
+	{"RightLowerLeg", "RightFoot", "RightAnkleRigAttachment", ANKLE_LIMITS},
 }
 local R15_NO_COLLIDES = {
 	{"LowerTorso", "LeftUpperArm"},
