@@ -192,17 +192,11 @@ local function createRigJoint(model, part0Name, part1Name, attachmentName, limit
 			constraint.TwistLimitsEnabled = true
 			constraint.TwistLowerAngle = limits.TwistLowerAngle
 			constraint.TwistUpperAngle = limits.TwistUpperAngle
+			local gravityScale = workspace.Gravity / 196.2
+			local maxTorque = limits.FrictionTorque or 500
+			constraint.MaxFrictionTorque = maxTorque * gravityScale
 			constraint.Parent = part1
 
-			local reduce = workspace.Gravity / 192.6
-
-			local torque = Instance.new("AngularVelocity")
-			torque.Name = "RagdollFriction"
-			torque.Attachment0 = a0
-			torque.Attachment1 = a1
-			torque.MaxTorque = 500 * reduce
-			torque.RelativeTo = "Attachment1"
-			torque.Parent = part1
 		end
 	end
 end

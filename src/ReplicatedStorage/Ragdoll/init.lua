@@ -91,13 +91,14 @@ else -- Client
 				end
 
 				wait(0.9)
-				local gravityScale = workspace.Gravity / 192.6
+				local gravityScale = workspace.Gravity / 196.2
 				-- TODO: friction lerp
 				local frictionJoints = {}
 				for _, v in pairs(character:GetDescendants()) do
-					if v:IsA("AngularVelocity") then
-						local current = v.MaxTorque
-						local next = (v.Parent.Name == "UpperTorso" and 0.5 or 0.05) * current * gravityScale
+					if v:IsA("BallSocketConstraint") and v.Name == "RagdollBallSocket" then
+						local scale = (v.Parent.Name == "UpperTorso" or v.Parent.Name == "Head") and 0.5 or 0.05
+						local current = v.MaxFrictionTorque
+						local next = current * scale * gravityScale
 						frictionJoints[v] = { current, next }
 					end
 				end
@@ -109,7 +110,7 @@ else -- Client
 						t = math.min(t + dt * tscale, 1)
 						for k, v in pairs(frictionJoints) do
 							local a, b = unpack(v)
-							k.MaxTorque = (1 - t) * a + t * b
+							k.MaxFrictionTorque = (1 - t) * a + t * b
 						end
 					end
 				end)
