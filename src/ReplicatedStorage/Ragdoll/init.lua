@@ -102,7 +102,7 @@ else -- Client
 					end
 				end
 				spawn(function()
-					local tscale = 1 / 0.3
+					local tscale = 1 / 0.4
 					local t = 0
 					while t < 1 do
 						local dt = RunService.Heartbeat:Wait()
