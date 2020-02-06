@@ -275,17 +275,11 @@ function Rigging.breakMotors(model, rigType)
 	-- character stays consistent when we break joints on the client before the server can do the
 	-- same on a client-side triggered death.
 
+	local motors
 	if rigType == Enum.HumanoidRigType.R6 then
-		disableMotorSet(model, R6_MOTOR6DS)
-		applyAngularImpulse(model, "Right Arm", Vector3.new(0, 0, 50))
-		applyAngularImpulse(model, "Left Arm", Vector3.new(0, 0, -50))
-		applyAngularImpulse(model, "Torso", Vector3.new(50, 0, 0))
+		motors = disableMotorSet(model, R6_MOTOR6DS)
 	elseif rigType == Enum.HumanoidRigType.R15 then
-		local motors = disableMotorSet(model, R15_MOTOR6DS)
-		local animator = model:FindFirstChildWhichIsA("Animator", true)
-		if animator then
-			animator:ApplyVelocities(motors)
-		end
+		motors = disableMotorSet(model, R15_MOTOR6DS)
 	else
 		error("unknown rig type")
 	end
@@ -295,6 +289,8 @@ function Rigging.breakMotors(model, rigType)
 	if rootPart and rootPart:IsA("BasePart") then
 		rootPart.CanCollide = false
 	end
+
+	return motors
 end
 
 return Rigging

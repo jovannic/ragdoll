@@ -83,7 +83,12 @@ else -- Client
 	local function onHumanoidAdded(character, humanoid)
 		humanoid.Died:Connect(
 			function()
-				Rigging.breakMotors(character, humanoid.RigType)
+				local motors = Rigging.breakMotors(character, humanoid.RigType)
+
+				local animator = character:FindFirstChildWhichIsA("Animator", true)
+				if animator then
+					animator:ApplyVelocities(motors)
+				end
 
 				wait(0.9)
 				local gravityScale = workspace.Gravity / 192.6
