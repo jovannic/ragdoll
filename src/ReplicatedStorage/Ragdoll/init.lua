@@ -102,34 +102,39 @@ else -- Client
 						frictionJoints[v] = { current, next }
 					end
 				end
-				spawn(function()
-					local tscale = 1 / 0.4
+
+				do
+					local duration = 0.4
 					local t = 0
 					while t < 1 do
-						local dt = RunService.Heartbeat:Wait()
-						t = math.min(t + dt * tscale, 1)
+						t = t + RunService.Heartbeat:Wait()
 						for k, v in pairs(frictionJoints) do
 							local a, b = unpack(v)
-							k.MaxFrictionTorque = (1 - t) * a + t * b
+							local alpha = math.min(t / duration, 1)
+							k.MaxFrictionTorque = (1 - alpha) * a + alpha * b
 						end
 					end
-				end)
+				end
 
-				wait(1)
+				wait(0.6)
+
 				local parts = {}
 				for _, instance in pairs(character:GetDescendants()) do
 					if instance:IsA("BasePart") or instance:IsA("Decal") then
 						table.insert(parts, instance)
 					end
 				end
-				local fadeTime = 0.3
-				local t = 0
-				while t < fadeTime do
-					local dt = RunService.Heartbeat:Wait()
-					for _, p in pairs(parts) do
-						p.Transparency = p.Transparency * 1.02 + dt / fadeTime
+
+				do
+					local fadeTime = 0.3
+					local t = 0
+					while t < fadeTime do
+						local dt = RunService.Heartbeat:Wait()
+						for _, p in pairs(parts) do
+							p.Transparency = p.Transparency * 1.02 + dt / fadeTime
+						end
+						t = t + dt
 					end
-					t = t + dt
 				end
 			end)
 	end
