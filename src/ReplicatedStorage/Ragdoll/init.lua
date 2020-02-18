@@ -87,7 +87,7 @@ else -- Client
 
 				local animator = character:FindFirstChildWhichIsA("Animator", true)
 				if animator then
-					animator:ApplyVelocities(motors)
+					animator:ApplyJointVelocities(motors)
 				end
 
 				wait(0.9)
