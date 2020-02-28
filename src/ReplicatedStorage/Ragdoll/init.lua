@@ -17,13 +17,6 @@ if RunService:IsServer() then
 	local function onHumanoidAdded(character, humanoid)
 		Rigging.createJoints(character, humanoid.RigType)
 		humanoid.BreakJointsOnDeath = not playerDefault
-		humanoid.Died:Connect(function()
-			if playerDefault then
-				-- Ragdoll them:
-				humanoid.BreakJointsOnDeath = false
-				Rigging.breakMotors(character, humanoid.RigType)
-			end
-		end)
 	end
 
 	-- Track existing and new player Humanoids:
@@ -80,6 +73,11 @@ else -- Client
 	-- Set player Humanoid properties:
 	local function onHumanoidAdded(character, humanoid)
 		humanoid.Died:Connect(function()
+			-- We first break the motors on the network owner (character's player in this case) so
+			-- that there is no visible round trip hitch while the server is waiting for physics
+			-- replication data for the child body parts that the owner (client) hasn't simulated
+			-- yet. This way by the time the server recieves the joint break physics data for the
+			-- child parts should already be available.
 			local motors = Rigging.breakMotors(character, humanoid.RigType)
 
 			local animator = character:FindFirstChildWhichIsA("Animator", true)
