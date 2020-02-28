@@ -90,7 +90,7 @@ else -- Client
 					animator:ApplyJointVelocities(motors)
 				end
 
-				wait(0.9)
+				wait(0.1)
 				local gravityScale = workspace.Gravity / 196.2
 				-- TODO: friction lerp
 				local frictionJoints = {}
@@ -104,7 +104,7 @@ else -- Client
 				end
 
 				do
-					local duration = 0.4
+					local duration = 0.6
 					local t = 0
 					while t < 1 do
 						t = t + RunService.Heartbeat:Wait()
