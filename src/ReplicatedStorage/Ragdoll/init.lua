@@ -17,15 +17,13 @@ if RunService:IsServer() then
 	local function onHumanoidAdded(character, humanoid)
 		Rigging.createJoints(character, humanoid.RigType)
 		humanoid.BreakJointsOnDeath = not playerDefault
-		humanoid.Died:Connect(
-			function()
-				if playerDefault then
-					-- Ragdoll them:
-					humanoid.BreakJointsOnDeath = false
-					Rigging.breakMotors(character, humanoid.RigType)
-				end
+		humanoid.Died:Connect(function()
+			if playerDefault then
+				-- Ragdoll them:
+				humanoid.BreakJointsOnDeath = false
+				Rigging.breakMotors(character, humanoid.RigType)
 			end
-		)
+		end)
 	end
 
 	-- Track existing and new player Humanoids:
@@ -81,62 +79,61 @@ else -- Client
 
 	-- Set player Humanoid properties:
 	local function onHumanoidAdded(character, humanoid)
-		humanoid.Died:Connect(
-			function()
-				local motors = Rigging.breakMotors(character, humanoid.RigType)
+		humanoid.Died:Connect(function()
+			local motors = Rigging.breakMotors(character, humanoid.RigType)
 
-				local animator = character:FindFirstChildWhichIsA("Animator", true)
-				if animator then
-					animator:ApplyJointVelocities(motors)
+			local animator = character:FindFirstChildWhichIsA("Animator", true)
+			if animator then
+				animator:ApplyJointVelocities(motors)
+			end
+
+			wait(0.1)
+			local gravityScale = workspace.Gravity / 196.2
+			-- TODO: friction lerp
+			local frictionJoints = {}
+			for _, v in pairs(character:GetDescendants()) do
+				if v:IsA("BallSocketConstraint") and v.Name == "RagdollBallSocket" then
+					local scale = (v.Parent.Name == "UpperTorso" or v.Parent.Name == "Head") and 0.5 or 0.05
+					local current = v.MaxFrictionTorque
+					local next = current * scale * gravityScale
+					frictionJoints[v] = { current, next }
 				end
+			end
 
-				wait(0.1)
-				local gravityScale = workspace.Gravity / 196.2
-				-- TODO: friction lerp
-				local frictionJoints = {}
-				for _, v in pairs(character:GetDescendants()) do
-					if v:IsA("BallSocketConstraint") and v.Name == "RagdollBallSocket" then
-						local scale = (v.Parent.Name == "UpperTorso" or v.Parent.Name == "Head") and 0.5 or 0.05
-						local current = v.MaxFrictionTorque
-						local next = current * scale * gravityScale
-						frictionJoints[v] = { current, next }
+			do
+				local duration = 0.6
+				local t = 0
+				while t < 1 do
+					t = t + RunService.Heartbeat:Wait()
+					for k, v in pairs(frictionJoints) do
+						local a, b = unpack(v)
+						local alpha = math.min(t / duration, 1)
+						k.MaxFrictionTorque = (1 - alpha) * a + alpha * b
 					end
 				end
+			end
 
-				do
-					local duration = 0.6
-					local t = 0
-					while t < 1 do
-						t = t + RunService.Heartbeat:Wait()
-						for k, v in pairs(frictionJoints) do
-							local a, b = unpack(v)
-							local alpha = math.min(t / duration, 1)
-							k.MaxFrictionTorque = (1 - alpha) * a + alpha * b
-						end
-					end
+			wait(0.6)
+
+			local parts = {}
+			for _, instance in pairs(character:GetDescendants()) do
+				if instance:IsA("BasePart") or instance:IsA("Decal") then
+					table.insert(parts, instance)
 				end
+			end
 
-				wait(0.6)
-
-				local parts = {}
-				for _, instance in pairs(character:GetDescendants()) do
-					if instance:IsA("BasePart") or instance:IsA("Decal") then
-						table.insert(parts, instance)
+			do
+				local fadeTime = 0.3
+				local t = 0
+				while t < fadeTime do
+					local dt = RunService.Heartbeat:Wait()
+					for _, p in pairs(parts) do
+						p.Transparency = p.Transparency * 1.02 + dt / fadeTime
 					end
+					t = t + dt
 				end
-
-				do
-					local fadeTime = 0.3
-					local t = 0
-					while t < fadeTime do
-						local dt = RunService.Heartbeat:Wait()
-						for _, p in pairs(parts) do
-							p.Transparency = p.Transparency * 1.02 + dt / fadeTime
-						end
-						t = t + dt
-					end
-				end
-			end)
+			end
+		end)
 	end
 
 	-- Track existing and new player Humanoids:
