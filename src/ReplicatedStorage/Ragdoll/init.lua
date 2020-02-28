@@ -80,8 +80,11 @@ else -- Client
 			-- child parts should already be available.
 			local motors = Rigging.breakMotors(character, humanoid.RigType)
 
-			local animator = character:FindFirstChildWhichIsA("Animator", true)
+			local animator = humanoid:FindFirstChildWhichIsA("Animator")
 			if animator then
+				-- Apply velocities to the child parts from animation after joints have been
+				-- disabled. Note: It's super important that this be called *before* all animations
+				-- are canceled, or there will be no animations to get velocities from!
 				animator:ApplyJointVelocities(motors)
 			end
 
