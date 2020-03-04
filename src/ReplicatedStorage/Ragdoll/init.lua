@@ -73,70 +73,92 @@ if RunService:IsServer() then
 
 else -- Client
 
+	local function disableParticleEmittersAndFadeOut(descendants, duration)
+		local transparencies = {}
+		for _, instance in pairs(descendants)) do
+			if instance:IsA("BasePart") or instance:IsA("Decal") then
+				table.insert(transparencies, { instance, instance.Transparency })
+			end
+			if instance:IsA("ParticleEmitter") then
+				instance.Enabled = false
+			end
+		end
+		local t = 0
+		while t < duration do
+			-- Using heartbeat because we want to update just before rendering next frame, and not
+			-- block the render thread kicking off (as RenderStepped does)
+			local dt = RunService.Heartbeat:Wait()
+			t = t + dt
+			local alpha = math.min(t / duration, 1)
+			for _, pair in pairs(transparencies) do
+				local p, t0 = unpack(pair)
+				p.Transparency = (1 - alpha) * t0
+			end
+		end
+	end
+
+	local function easeJointFriction(descendants, duration)
+		local gravityScale = workspace.Gravity / 196.2
+			local frictionJoints = {}
+			for _, v in pairs(descendants) do
+				if v:IsA("BallSocketConstraint") and v.Name == "RagdollBallSocket" then
+					local current = v.MaxFrictionTorque
+					-- Keep the torso and neck a little stiffer...
+					local scale = (v.Parent.Name == "UpperTorso" or v.Parent.Name == "Head") and 0.5 or 0.05
+					local next = current * scale * gravityScale
+					frictionJoints[v] = { v, current, next }
+				end
+			end
+			local t = 0
+			while t < duration do
+				-- Using stepped because we want to update just before physics sim
+				local _, dt = RunService.Stepped:Wait()
+				t = t + dt
+				local alpha = math.min(t / duration, 1)
+				for _, tuple in pairs(frictionJoints) do
+					local bsc, a, b = unpack(tuple)
+					bsc.MaxFrictionTorque = (1 - alpha) * a + alpha * b
+				end
+			end
+	end
+
 	-- Set player Humanoid properties:
 	local function onHumanoidAdded(character, humanoid)
 		humanoid.Died:Connect(function()
-			-- We first break the motors on the network owner (character's player in this case) so
-			-- that there is no visible round trip hitch while the server is waiting for physics
-			-- replication data for the child body parts that the owner (client) hasn't simulated
-			-- yet. This way by the time the server recieves the joint break physics data for the
-			-- child parts should already be available.
+			-- We first break the motors on the network owner (character's player in this case). If
+			-- we initiated ragdoll by breaking joints on the server there's a visible hitch while
+			-- the server waits, a full round trip latency delay at least, for the network owner to
+			-- recieve the joint removal, start simulating the ragdoll, and replicating physics
+			-- state. so that there is no visible round trip hitch while the server is waiting for
+			-- physics replication data for the child body parts that the owner (client) hasn't
+			-- simulated yet. This way by the time the server recieves the joint break physics data
+			-- for the child parts should already be available.
 			local motors = Rigging.breakMotors(character, humanoid.RigType)
 
+			-- Apply velocities from animation to the child parts to mantain visual momentum.
+			--
+			-- This should be done on the network owner's side just after disabling the kinematic
+			-- joint so the child parts are split off as seperate dynamic bodies.
+			--
+			-- It's also important that this is called *before* any animations are canceled or
+			-- changed after death! Otherwise there will be no animations to get velocities from or
+			-- the velocities won't be consistent!
 			local animator = humanoid:FindFirstChildWhichIsA("Animator")
 			if animator then
-				-- Apply velocities to the child parts from animation after joints have been
-				-- disabled. Note: It's super important that this be called *before* all animations
-				-- are canceled, or there will be no animations to get velocities from!
 				animator:ApplyJointVelocities(motors)
 			end
 
+			-- stiff shock phase...
 			wait(0.1)
-			local gravityScale = workspace.Gravity / 196.2
-			-- TODO: friction lerp
-			local frictionJoints = {}
-			for _, v in pairs(character:GetDescendants()) do
-				if v:IsA("BallSocketConstraint") and v.Name == "RagdollBallSocket" then
-					local scale = (v.Parent.Name == "UpperTorso" or v.Parent.Name == "Head") and 0.5 or 0.05
-					local current = v.MaxFrictionTorque
-					local next = current * scale * gravityScale
-					frictionJoints[v] = { current, next }
-				end
-			end
 
-			do
-				local duration = 0.6
-				local t = 0
-				while t < 1 do
-					t = t + RunService.Heartbeat:Wait()
-					for k, v in pairs(frictionJoints) do
-						local a, b = unpack(v)
-						local alpha = math.min(t / duration, 1)
-						k.MaxFrictionTorque = (1 - alpha) * a + alpha * b
-					end
-				end
-			end
+			-- gradually give up...
+			easeJointFriction(character:GetDescendants(), 0.5)
 
+			-- time to settle...
 			wait(0.6)
 
-			local parts = {}
-			for _, instance in pairs(character:GetDescendants()) do
-				if instance:IsA("BasePart") or instance:IsA("Decal") then
-					table.insert(parts, instance)
-				end
-			end
-
-			do
-				local fadeTime = 0.3
-				local t = 0
-				while t < fadeTime do
-					local dt = RunService.Heartbeat:Wait()
-					for _, p in pairs(parts) do
-						p.Transparency = p.Transparency * 1.02 + dt / fadeTime
-					end
-					t = t + dt
-				end
-			end
+			-- fade into the mist...
+			disableParticleEmittersAndFadeOut(character:GetDescendants(), 0.6)
 		end)
 	end
 
