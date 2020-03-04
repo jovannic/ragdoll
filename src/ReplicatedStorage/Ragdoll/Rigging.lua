@@ -220,7 +220,7 @@ end
 
 local function createRigJoints(model, rig, noCollides)
 	for parentName, params in pairs(rig) do
-		createRigJoint(model, parentName, unpack(params))
+		createRigJoint(model, unpack(params))
 	end
 	for _, params in ipairs(noCollides) do
 		createNoCollide(model, unpack(params))

@@ -75,7 +75,7 @@ else -- Client
 
 	local function disableParticleEmittersAndFadeOut(descendants, duration)
 		local transparencies = {}
-		for _, instance in pairs(descendants)) do
+		for _, instance in pairs(descendants) do
 			if instance:IsA("BasePart") or instance:IsA("Decal") then
 				table.insert(transparencies, { instance, instance.Transparency })
 			end
@@ -91,8 +91,8 @@ else -- Client
 			t = t + dt
 			local alpha = math.min(t / duration, 1)
 			for _, pair in pairs(transparencies) do
-				local p, t0 = unpack(pair)
-				p.Transparency = (1 - alpha) * t0
+				local p, a = unpack(pair)
+				p.Transparency = (1 - alpha) * a + alpha * 1
 			end
 		end
 	end
