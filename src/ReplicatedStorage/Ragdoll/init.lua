@@ -15,7 +15,9 @@ if RunService:IsServer() then
 
 	-- Set player Humanoid properties:
 	local function onHumanoidAdded(character, humanoid)
-		Rigging.createJoints(character, humanoid.RigType)
+		-- In the case of CharacterApperanceLoaded, we need to re-rig.
+		Rigging.removeRagdollJoints(character)
+		Rigging.createRagdollJoints(character, humanoid.RigType)
 		humanoid.BreakJointsOnDeath = not playerDefault
 	end
 
@@ -37,6 +39,7 @@ if RunService:IsServer() then
 
 	-- Track existing and new player characters:
 	local function onPlayerAdded(player)
+		player.CharacterAdded:Connect(onCharacterAdded)
 		player.CharacterAppearanceLoaded:Connect(onCharacterAdded)
 		if player.Character then
 			onCharacterAdded(player.Character)

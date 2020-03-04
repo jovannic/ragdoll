@@ -21,7 +21,7 @@ local ANKLE_LIMITS = {
 }
 
 local ELBOW_LIMITS = {
-	UpperAngle = 60; -- lower arm wrist twist
+	UpperAngle = 60; -- an elbow is basically a hinge, but this allows some lower arm wrist twist
 	TwistLowerAngle = 0;
 	TwistUpperAngle = 120;
 }
@@ -117,7 +117,7 @@ local R15_NO_COLLIDES = {
 	{"Head", "LeftUpperArm"},
 	{"Head", "RightUpperArm"},
 }
--- Tree order
+-- DFS tree order
 local R15_MOTOR6DS = {
 	{"Waist", "UpperTorso"},
 
@@ -165,8 +165,10 @@ local R6_RAGDOLL_RIG = {
 	{"Left Arm", "Torso", "LeftShoulderRagdollAttachment", R6_SHOULDER_LIMITS},
 	{"Right Arm", "Torso", "RightShoulderRagdollAttachment", R6_SHOULDER_LIMITS},
 }
-local R6_NO_COLLIDE = {
+local R6_NO_COLLIDES = {
 	{"Left Leg", "Right Leg"},
+	{"Head", "Right Arm"},
+	{"Head", "Left Arm"},
 }
 local R6_MOTOR6DS = {
 	{"Neck", "Torso"},
@@ -176,6 +178,9 @@ local R6_MOTOR6DS = {
 	{"Right Hip", "Torso"},
 }
 
+local BALL_SOCKET_NAME = "RagdollBallSocket"
+local NO_COLLIDE_NAME = "RagdollNoCollision"
+
 local function createRigJoint(model, part0Name, part1Name, attachmentName, limits)
 	local part0 = model:FindFirstChild(part0Name)
 	local part1 = model:FindFirstChild(part1Name)
@@ -184,7 +189,7 @@ local function createRigJoint(model, part0Name, part1Name, attachmentName, limit
 		local a1 = part1:FindFirstChild(attachmentName)
 		if a0 and a1 and a0:IsA("Attachment") and a1:IsA("Attachment") then
 			local constraint = Instance.new("BallSocketConstraint")
-			constraint.Name = "RagdollBallSocket"
+			constraint.Name = BALL_SOCKET_NAME
 			constraint.Attachment0 = a0
 			constraint.Attachment1 = a1
 			constraint.LimitsEnabled = true
@@ -201,25 +206,28 @@ local function createRigJoint(model, part0Name, part1Name, attachmentName, limit
 	end
 end
 
-local function createRigJoints(model, rig)
-	for _, params in ipairs(rig) do
-		createRigJoint(model, unpack(params))
-	end
-end
-
 local function createNoCollide(model, part0Name, part1Name)
 	local part0 = model:FindFirstChild(part0Name)
 	local part1 = model:FindFirstChild(part1Name)
 	if part0 and part1 then
 		local constraint = Instance.new("NoCollisionConstraint")
-		constraint.Name = "RagdollNoCollision"
+		constraint.Name = NO_COLLIDE_NAME
 		constraint.Part0 = part0
 		constraint.Part1 = part1
 		constraint.Parent = part0
 	end
 end
 
-local function disableMotorSet(model, motorSet)
+local function createRigJoints(model, rig, noCollides)
+	for parentName, params in pairs(rig) do
+		createRigJoint(model, parentName, unpack(params))
+	end
+	for _, params in ipairs(noCollides) do
+		createNoCollide(model, unpack(params))
+	end
+end
+
+local function breakMotorSet(model, motorSet)
 	local motors = {}
 	-- Destroy all regular joints:
 	for _, params in ipairs(motorSet) do
@@ -235,38 +243,53 @@ local function disableMotorSet(model, motorSet)
 	return motors
 end
 
-local function applyAngularImpulse(model, partName, impulse)
-	local part = mode:FindFirstChild(partName)
-	if part then
-		part.RotVelocity = part.RotVelocity + impulse
+local function disableMotorSet(model, motorSet)
+	local motors = {}
+	-- Destroy all regular joints:
+	for _, params in ipairs(motorSet) do
+		local part = model:FindFirstChild(params[2])
+		if part then
+			local motor = part:FindFirstChild(params[1])
+			if motor and motor:IsA("Motor6D") then
+				table.insert(motors, motor)
+				motor.Enabled = false
+			end
+		end
 	end
+	return motors
 end
 
-function Rigging.createJoints(model, rigType)
+function Rigging.createRagdollJoints(model, rigType)
 	if rigType == Enum.HumanoidRigType.R6 then
+		-- Add additional "missing" attachments for R6
 		for _, attachmentParams in ipairs(R6_ADDITIONAL_ATTACHMENTS) do
 			local part = model:FindFirstChild(attachmentParams[1])
-			if part then
-				local attachment = Instance.new("Attachment")
-				attachment.Name = attachmentParams[2]
-				attachment.Position = attachmentParams[3]
-				attachment.Parent = part
+			if part and part:IsA("BasePart") then
+				local name = attachmentParams[2]
+				if not part:FindFirstChild(name) then
+					local attachment = Instance.new("Attachment")
+					attachment.Name = name
+					attachment.Position = attachmentParams[3]
+					attachment.Parent = part
+				end
 			end
 		end
 
-		createRigJoints(model, R6_RAGDOLL_RIG)
-		createNoCollide(model, "Left Leg", "Right Leg")
-		createNoCollide(model, "Head", "Right Arm")
-		createNoCollide(model, "Head", "Left Arm")
-		-- createNoCollide(model, "Left Arm", "Left Leg")
-		-- createNoCollide(model, "Right Arm", "Right Leg")
+		createRigJoints(model, R6_RAGDOLL_RIG, R6_NO_COLLIDES)
 	elseif rigType == Enum.HumanoidRigType.R15 then
-		createRigJoints(model, R15_RAGDOLL_RIG)
-		for _, params in ipairs(R15_NO_COLLIDES) do
-			createNoCollide(model, unpack(params))
-		end
+		createRigJoints(model, R15_RAGDOLL_RIG, R15_NO_COLLIDES)
 	else
 		error("unknown rig type")
+	end
+end
+
+function Rigging.removeRagdollJoints(model)
+	for _, descendant in pairs(model:GetDescendants()) do
+		if (descendant:IsA("BallSocketConstraint") and descendant.Name == BALL_SOCKET_NAME)
+			or (descendant:IsA("NoCollisionConstraint") and descendant.Name == NO_COLLIDE_NAME)
+		then
+			descendant.Parent = nil
+		end
 	end
 end
 
@@ -274,6 +297,29 @@ function Rigging.breakMotors(model, rigType)
 	-- Note: We intentionally do not destroy the root joint so that the mechanism root of the
 	-- character stays consistent when we break joints on the client before the server can do the
 	-- same on a client-side triggered death.
+
+	local motors
+	if rigType == Enum.HumanoidRigType.R6 then
+		motors = breakMotorSet(model, R6_MOTOR6DS)
+	elseif rigType == Enum.HumanoidRigType.R15 then
+		motors = breakMotorSet(model, R15_MOTOR6DS)
+	else
+		error("unknown rig type")
+	end
+
+	-- Set the root part to non-collide
+	local rootPart = model.PrimaryPart or model:FindFirstChild("HumanoidRootPart")
+	if rootPart and rootPart:IsA("BasePart") then
+		rootPart.CanCollide = false
+	end
+
+	return motors
+end
+
+function Rigging.disableMotors(model, rigType)
+	-- Note: We intentionally do not destroy the root joint so that the mechanism root of the
+	-- character stays consistent when we break joints on the client. This avoid the need for the client to wait
+	-- for re-assignment of network ownership of a new mechanism, which creates a visible hitch.
 
 	local motors
 	if rigType == Enum.HumanoidRigType.R6 then
