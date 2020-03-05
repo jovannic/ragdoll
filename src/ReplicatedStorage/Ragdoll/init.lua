@@ -61,6 +61,13 @@ local function easeJointFriction(descendants, duration)
 end
 
 local function onOwnedHumanoidDeath(character, humanoid)
+	-- If we're missing our RemoteEvent to notify the server that we've started simulating our
+	-- ragdoll so it can authoritatively replicate the joint removal, don't ragdoll at all.
+	local remote = humanoid:FindFirstChild("OnRagdoll")
+	if not remote then
+		return
+	end
+
 	-- We first break the motors on the network owner (the player that owns this character).
 	--
 	-- This way there is no visible round trip hitch. By the time the server receives the joint
@@ -77,8 +84,8 @@ local function onOwnedHumanoidDeath(character, humanoid)
 	-- creating a new, seperate network onwership unit that we would have to wait for the server to
 	-- assign us network ownership of before we would start simulating and replicating physics data
 	-- for it, creating an additional round trip hitch on our end for our own character.
-	local motors = Rigging.breakMotors(character, humanoid.RigType)
-
+	local motors = Rigging.disableMotors(character, humanoid.RigType)
+	
 	-- Apply velocities from animation to the child parts to mantain visual momentum.
 	--
 	-- This should be done on the network owner's side just after disabling the kinematic joint so
@@ -93,6 +100,9 @@ local function onOwnedHumanoidDeath(character, humanoid)
 	if animator then
 		animator:ApplyJointVelocities(motors)
 	end
+
+	-- Tell the server that we started simulating our ragdoll
+	remote:FireServer(true)
 
 	-- stiff shock phase...
 	wait(0.1)
@@ -115,6 +125,24 @@ local function onHumanoidAdded(player, character, humanoid)
 		Rigging.createRagdollJoints(character, humanoid.RigType)
 		-- We will only disable specific joints
 		humanoid.BreakJointsOnDeath = false
+		-- Create remote event for the client to notify the server that it went ragdoll. The server
+		-- never breaks joints authoritatively until the client acknowledges that it has already
+		-- broken it's own joints non-authoritatively, started simulating the ragdoll locally, and
+		-- should already be sending physics data.
+		local remote = humanoid:FindFirstChild("OnRagdoll")
+		if not remote then
+			remote = Instance.new("RemoteEvent")
+			remote.Name = "OnRagdoll"
+			remote.Parent = humanoid
+		end
+		remote.OnServerEvent:Connect(function(remotePlayer, isRagdoll)
+			if remotePlayer ~= player then
+				remotePlayer:Kick("Illegal ragdoll RemoteEvent invocation on another player's character.")
+			end
+			if isRagdoll and humanoid:GetState() == Enum.HumanoidStateType.Dead then
+				Rigging.disableMotors(character, humanoid.RigType)
+			end
+		end)
 		-- We don't bother with fade-out on the server
 	else
 		-- Any character: handle fade out on death
