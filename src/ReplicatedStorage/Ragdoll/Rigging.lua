@@ -227,22 +227,6 @@ local function createRigJoints(model, rig, noCollides)
 	end
 end
 
-local function breakMotorSet(model, motorSet)
-	local motors = {}
-	-- Destroy all regular joints:
-	for _, params in ipairs(motorSet) do
-		local part = model:FindFirstChild(params[2])
-		if part then
-			local motor = part:FindFirstChild(params[1])
-			if motor and motor:IsA("Motor6D") then
-				table.insert(motors, motor)
-				motor:Destroy()
-			end
-		end
-	end
-	return motors
-end
-
 local function disableMotorSet(model, motorSet)
 	local motors = {}
 	-- Destroy all regular joints:
@@ -293,31 +277,8 @@ function Rigging.removeRagdollJoints(model)
 	end
 end
 
-function Rigging.breakMotors(model, rigType)
-	-- Note: We intentionally do not destroy the root joint so that the mechanism root of the
-	-- character stays consistent when we break joints on the client before the server can do the
-	-- same on a client-side triggered death.
-
-	local motors
-	if rigType == Enum.HumanoidRigType.R6 then
-		motors = breakMotorSet(model, R6_MOTOR6DS)
-	elseif rigType == Enum.HumanoidRigType.R15 then
-		motors = breakMotorSet(model, R15_MOTOR6DS)
-	else
-		error("unknown rig type")
-	end
-
-	-- Set the root part to non-collide
-	local rootPart = model.PrimaryPart or model:FindFirstChild("HumanoidRootPart")
-	if rootPart and rootPart:IsA("BasePart") then
-		rootPart.CanCollide = false
-	end
-
-	return motors
-end
-
 function Rigging.disableMotors(model, rigType)
-	-- Note: We intentionally do not destroy the root joint so that the mechanism root of the
+	-- Note: We intentionally do not disable the root joint so that the mechanism root of the
 	-- character stays consistent when we break joints on the client. This avoid the need for the client to wait
 	-- for re-assignment of network ownership of a new mechanism, which creates a visible hitch.
 
