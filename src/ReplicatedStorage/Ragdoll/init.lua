@@ -61,15 +61,22 @@ local function easeJointFriction(descendants, duration)
 end
 
 local function onOwnedHumanoidDeath(character, humanoid)
-	-- We first break the motors on the network owner (character's player in this case). If
-	-- we initiated ragdoll by breaking joints on the server there's a visible hitch while
-	-- the server waits, a full round trip latency delay at least, for the network owner to
-	-- recieve the joint removal, start simulating the ragdoll, and replicating physics
-	-- state. so that there is no visible round trip hitch while the server is waiting for
-	-- physics replication data for the child body parts that the owner (client) hasn't
-	-- simulated yet. This way by the time the server recieves the joint break physics data
-	-- for the child parts should already be available.
-	local motors = Rigging.disableMotors(character, humanoid.RigType)
+	-- We first break the motors on the network owner (the player that owns this character).
+	--
+	-- If we initiated ragdoll by breaking joints on the server there's a visible hitch while the
+	-- server waits at least a full round trip time for the network owner to receive the joint
+	-- removal, start simulating the ragdoll, and replicating physics state. Meanwhile the other
+	-- body parts would be frozen in air on the server and other clients until there is physics data
+	-- from the owner.
+	--
+	-- This way there is no visible round trip hitch. By the time the server receives the joint
+	-- break physics data for the child parts should already be available. Seamless transition.
+	--
+	-- We also specifically do not break the root joint so we keep a consistent mechanism / network
+	-- ownership unit root. If we did break the root joint we'd be creating a new, seperate network
+	-- onwership unit that we would have to wait for the server to assign us ownership of before we
+	-- would start simulating and replicating physics data for it, creating an additional hitch.
+	local motors = Rigging.breakMotors(character, humanoid.RigType)
 
 	-- Apply velocities from animation to the child parts to mantain visual momentum.
 	--
