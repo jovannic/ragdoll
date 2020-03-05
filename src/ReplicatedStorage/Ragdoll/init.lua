@@ -105,7 +105,7 @@ local function onAnyHumanoidDeath(character, humanoid)
 	-- time for friction fade out and settle
 	wait(1.5)
 	-- fade into the mist...
-	disableParticleEmittersAndFadeOut(character:GetDescendants(), 0.6)
+	disableParticleEmittersAndFadeOut(character:GetDescendants(), 0.4)
 end
 
 -- Handle Humanoid death
