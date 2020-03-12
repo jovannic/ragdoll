@@ -81,7 +81,7 @@ local function onOwnedHumanoidDeath(character, humanoid)
 	--
 	-- We also specifically do not disable the root joint on the client so we can maintain a
 	-- consistent mechanism and network ownership unit root. If we did disable the root joint we'd
-	-- be creating a new, seperate network onwership unit that we would have to wait for the server
+	-- be creating a new, seperate network ownership unit that we would have to wait for the server
 	-- to assign us network ownership of before we would start simulating and replicating physics
 	-- data for it, creating an additional round trip hitch on our end for our own character.
 	local motors = Rigging.disableMotors(character, humanoid.RigType)
@@ -121,7 +121,8 @@ end
 -- Handle Humanoid death
 local function onHumanoidAdded(player, character, humanoid)
 	if isServer then
-		-- Server creates ragdoll joints on spawn to allow for seamless transition later.
+		-- Server creates ragdoll joints on spawn to allow for seamless transition even if death is
+		-- initiated on the client. The Motor6Ds keep them inactive until they are disabled.
 		Rigging.createRagdollJoints(character, humanoid.RigType)
 		-- We will only disable specific joints
 		humanoid.BreakJointsOnDeath = false
@@ -136,10 +137,7 @@ local function onHumanoidAdded(player, character, humanoid)
 			remote.Parent = humanoid
 		end
 		remote.OnServerEvent:Connect(function(remotePlayer, isRagdoll)
-			if remotePlayer ~= player then
-				remotePlayer:Kick("Illegal ragdoll RemoteEvent invocation on another player's character.")
-			end
-			if isRagdoll and humanoid:GetState() == Enum.HumanoidStateType.Dead then
+			if isRagdoll and remotePlayer == Players:GetPlayerFromCharacter(character) then
 				Rigging.disableMotors(character, humanoid.RigType)
 			end
 		end)
