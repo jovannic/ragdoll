@@ -1,10 +1,18 @@
 local Rigging = {}
 
+-- Gravity that joint friction values were tuned under.
+local REFERENCE_GRAVITY = 196.2
+
+-- ReferenceMass values from mass of child part. Used to normalized "stiffness" for differently
+-- sized avatars (with different mass).
+local DEFAULT_MAX_FRICTION_TORQUE = 500
+
 local HEAD_LIMITS = {
 	UpperAngle = 45;
 	TwistLowerAngle = -40;
 	TwistUpperAngle = 40;
 	FrictionTorque = 400;
+	ReferenceMass = 1.0249234437943;
 }
 
 local WAIST_LIMITS = {
@@ -12,42 +20,50 @@ local WAIST_LIMITS = {
 	TwistLowerAngle = -40;
 	TwistUpperAngle = 20;
 	FrictionTorque = 750;
+	ReferenceMass = 2.861558675766;
 }
 
 local ANKLE_LIMITS = {
 	UpperAngle = 10;
 	TwistLowerAngle = -10;
 	TwistUpperAngle = 10;
+	ReferenceMass = 0.43671694397926;
 }
 
 local ELBOW_LIMITS = {
-	UpperAngle = 60; -- an elbow is basically a hinge, but this allows some lower arm wrist twist
+	-- Elbow is basically a hinge, but allow some twist for Supination and Pronation
+	UpperAngle = 30; 
 	TwistLowerAngle = 0;
 	TwistUpperAngle = 120;
+	ReferenceMass = 0.70196455717087
 }
 
 local WRIST_LIMITS = {
 	UpperAngle = 30;
 	TwistLowerAngle = -10;
 	TwistUpperAngle = 10;
+	ReferenceMass = 0.69132566452026;
 }
 
 local KNEE_LIMITS = {
 	UpperAngle = 5;
 	TwistLowerAngle = -120;
 	TwistUpperAngle = 0;
+	ReferenceMass = 0.65389388799667;
 }
 
 local SHOULDER_LIMITS = {
 	UpperAngle = 60;
 	TwistLowerAngle = -60;
 	TwistUpperAngle = 175;
+	ReferenceMass = 0.90918225049973;
 }
 
 local HIP_LIMITS = {
 	UpperAngle = 40;
 	TwistLowerAngle = -5;
 	TwistUpperAngle = 100;
+	ReferenceMass = 1.9175016880035;
 }
 
 local R6_HEAD_LIMITS = {
@@ -197,11 +213,14 @@ local function createRigJoint(model, part0Name, part1Name, attachmentName, limit
 			constraint.TwistLimitsEnabled = true
 			constraint.TwistLowerAngle = limits.TwistLowerAngle
 			constraint.TwistUpperAngle = limits.TwistUpperAngle
-			local gravityScale = workspace.Gravity / 196.2
-			local maxTorque = limits.FrictionTorque or 500
-			constraint.MaxFrictionTorque = maxTorque * gravityScale
+			-- Scale constant torque limit for joint friction relative to gravity and the mass of
+			-- the body part.
+			local gravityScale = workspace.Gravity / REFERENCE_GRAVITY
+			local referenceMass = limits.ReferenceMass
+			local massScale = referenceMass and (part1:GetMass() / referenceMass) or 1
+			local maxTorque = limits.FrictionTorque or DEFAULT_MAX_FRICTION_TORQUE
+			constraint.MaxFrictionTorque = maxTorque * massScale * gravityScale
 			constraint.Parent = part1
-
 		end
 	end
 end
