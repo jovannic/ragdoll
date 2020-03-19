@@ -174,12 +174,15 @@ end
 
 -- Track existing and new player characters
 local function onPlayerAdded(player)
+	-- Always fired on character spawn
 	player.CharacterAdded:Connect(function(character)
 		onCharacterAdded(player, character)
 	end)
 
 	if isServer then
+		-- Only fired on the server when character auto-loaded or rebuilt from HumanoidDescription
 		player.CharacterAppearanceLoaded:Connect(function(character)
+			-- Character was essentially destroyed and rebuilt
 			onCharacterAdded(player, character)
 		end)
 	end
