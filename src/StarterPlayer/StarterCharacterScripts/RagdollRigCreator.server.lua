@@ -28,8 +28,8 @@ local character = script.Parent
 
 local humanoid = character:FindFirstChildOfClass("Humanoid")
 while character:IsDescendantOf(game) and not humanoid do
-    waitForFirst(character.ChildAdded, character.AncestryChanged)
-    humanoid = character:FindFirstChildOfClass("Humanoid")
+	waitForFirst(character.ChildAdded, character.AncestryChanged)
+	humanoid = character:FindFirstChildOfClass("Humanoid")
 end
 
 -- We will only disable specific joints
@@ -41,14 +41,14 @@ humanoid.BreakJointsOnDeath = false
 -- should already be sending physics data.
 local remote = humanoid:FindFirstChild("OnRagdoll")
 if not remote then
-    remote = Instance.new("RemoteEvent")
-    remote.Name = "OnRagdoll"
-    remote.Parent = humanoid
+	remote = Instance.new("RemoteEvent")
+	remote.Name = "OnRagdoll"
+	remote.Parent = humanoid
 end
 remote.OnServerEvent:Connect(function(remotePlayer, isRagdoll)
-    if isRagdoll and remotePlayer == Players:GetPlayerFromCharacter(character) then
-        Rigging.disableMotors(character, humanoid.RigType)
-    end
+	if isRagdoll and remotePlayer == Players:GetPlayerFromCharacter(character) then
+		Rigging.disableMotors(character, humanoid.RigType)
+	end
 end)
 
 -- Server creates ragdoll joints on spawn to allow for seamless transition even if death is
