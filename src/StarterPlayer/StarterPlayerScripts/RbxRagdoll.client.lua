@@ -7,6 +7,26 @@ local Rigging = require(DefaultRagdoll:WaitForChild("Rigging", 120))
 
 local localPlayer = Players.LocalPlayer
 
+ -- wait for the first of the passed signals to fire
+ local function waitForFirst(...)
+	local shunt = Instance.new("BindableEvent")
+	local slots = {...}
+
+	local function fire(...)
+		for i = 1, #slots do
+			slots[i]:Disconnect()
+		end
+
+		return shunt:Fire(...)
+	end
+
+	for i = 1, #slots do
+		slots[i] = slots[i]:Connect(fire)
+	end
+
+	return shunt.Event:Wait()
+end
+
 local function disableParticleEmittersAndFadeOut(descendants, duration)
 	local transparencies = {}
 	for _, instance in pairs(descendants) do
@@ -107,58 +127,99 @@ local function onOwnedHumanoidDeath(character, humanoid)
 	easeJointFriction(character:GetDescendants(), 0.5)
 end
 
-local function onAnyHumanoidDeath(character, humanoid)
-	-- time for friction fade out and settle
-	wait(1.5)
-	-- fade into the mist...
-	disableParticleEmittersAndFadeOut(character:GetDescendants(), 0.4)
+local function humanoidReady(player, character, humanoid)
+	local ancestryChangedConn
+	local diedConn
+	local function disconnect()
+		ancestryChangedConn:Disconnect()
+		diedConn:Disconnect()
+	end
+
+	-- Handle Humanoid death
+	diedConn = humanoid.Died:Connect(function()
+		-- Assume death is final
+		disconnect()
+		-- Any character: handle fade out on death
+		delay(1.5, function()
+			-- fade into the mist...
+			disableParticleEmittersAndFadeOut(character:GetDescendants(), 0.4)
+		end)
+		-- Just my character: initiate ragdoll and do friction easing 
+		if player == localPlayer then
+			onOwnedHumanoidDeath(character, humanoid)
+		end
+	end)
+
+	-- Handle connection cleanup on remove
+	ancestryChangedConn = humanoid.AncestryChanged:Connect(function(_child, parent)
+		if not game:IsAncestorOf(parent) then
+			disconnect()
+		end
+	end)
 end
 
--- Handle Humanoid death
-local function onHumanoidAdded(player, character, humanoid)
-    -- Any character: handle fade out on death
-    humanoid.Died:Connect(function()
-        onAnyHumanoidDeath(character, humanoid)
-    end)
-    -- Just my character: initiate ragdoll and do friction easing 
-    if player == localPlayer then
-        humanoid.Died:Connect(function()
-            onOwnedHumanoidDeath(character, humanoid)
-        end)
-    end
-end
+local function characterAdded(player, character)
+	-- Avoiding memory leaks in the face of Character/Humanoid/RootPart lifetime has a few complications:
+	-- * character deparenting is a Remove instead of a Destroy, so signals are not cleaned up automatically.
+	-- ** must use a waitForFirst on everything and listen for hierarchy changes.
+	-- * the character might not be in the dm by the time CharacterAdded fires
+	-- ** constantly check consistency with player.Character and abort if CharacterAdded is fired again
+	-- * Humanoid may not exist immediately, and by the time it's inserted the character might be deparented.
+	-- * RootPart probably won't exist immediately.
+	-- ** by the time RootPart is inserted and Humanoid.RootPart is set, the character or the humanoid might be deparented.
 
--- Track existing and new player Humanoids
-local function onCharacterAdded(player, character)
+	if not character.Parent then
+		waitForFirst(character.AncestryChanged, player.CharacterAdded)
+	end
+
+	if player.Character ~= character or not character.Parent then
+		return
+	end
+
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
-	if humanoid then
-		onHumanoidAdded(player, character, humanoid)
-	else
-		character.ChildAdded:Connect(
-			function(child)
-				if child:IsA("Humanoid") then
-					onHumanoidAdded(player, character, child)
-				end
-			end
-		)
+	while character:IsDescendantOf(game) and not humanoid do
+		waitForFirst(character.ChildAdded, character.AncestryChanged, player.CharacterAdded)
+		humanoid = character:FindFirstChildOfClass("Humanoid")
+	end
+
+	if player.Character ~= character or not character:IsDescendantOf(game) then
+		return
+	end
+
+	-- must rely on HumanoidRootPart naming because Humanoid.RootPart does not fire changed signals
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	while character:IsDescendantOf(game) and not rootPart do
+		waitForFirst(character.ChildAdded, character.AncestryChanged, humanoid.AncestryChanged, player.CharacterAdded)
+		rootPart = character:FindFirstChild("HumanoidRootPart")
+	end
+
+	if rootPart and humanoid:IsDescendantOf(game) and character:IsDescendantOf(game) and player.Character == character then
+		humanoidReady(player, character, humanoid)
 	end
 end
 
--- Track existing and new player characters
-local function onPlayerAdded(player)
-	-- Always fired on character spawn
-	player.CharacterAdded:Connect(function(character)
-		onCharacterAdded(player, character)
+local function playerAdded(player)
+	local characterAddedConn = player.CharacterAdded:Connect(function(character)
+		characterAdded(player, character)
+	end)
+	
+	-- Players are Removed, not Destroyed, by replication so we must clean up
+	local ancestryChangedConn
+	ancestryChangedConn = player.AncestryChanged:Connect(function(_child, parent)
+		if not game:IsAncestorOf(parent) then
+			ancestryChangedConn:Disconnect()
+			characterAddedConn:Disconnect()
+		end
 	end)
 
 	local character = player.Character
 	if character then
-		onCharacterAdded(player, character)
+		characterAdded(player, character)
 	end
 end
 
 -- Track all players (including local player on the client)
-Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerAdded:Connect(playerAdded)
 for _, player in pairs(Players:GetPlayers()) do
-	onPlayerAdded(player)
+	playerAdded(player)
 end
