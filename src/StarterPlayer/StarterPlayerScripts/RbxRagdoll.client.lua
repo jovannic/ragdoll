@@ -127,7 +127,7 @@ local function onOwnedHumanoidDeath(character, humanoid)
 	easeJointFriction(character:GetDescendants(), 0.5)
 end
 
-local function humanoidReady(player, character, humanoid)
+local function humanoidReady(character, humanoid)
 	local ancestryChangedConn
 	local diedConn
 	local function disconnect()
@@ -145,7 +145,7 @@ local function humanoidReady(player, character, humanoid)
 			disableParticleEmittersAndFadeOut(character:GetDescendants(), 0.4)
 		end)
 		-- Just my character: initiate ragdoll and do friction easing 
-		if player == localPlayer then
+		if Players:GetPlayerFromCharacter(character) == localPlayer then
 			onOwnedHumanoidDeath(character, humanoid)
 		end
 	end)
@@ -194,7 +194,7 @@ local function characterAdded(player, character)
 	end
 
 	if rootPart and humanoid:IsDescendantOf(game) and character:IsDescendantOf(game) and player.Character == character then
-		humanoidReady(player, character, humanoid)
+		humanoidReady(character, humanoid)
 	end
 end
 
