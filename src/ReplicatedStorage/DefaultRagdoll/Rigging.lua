@@ -1,3 +1,5 @@
+local RunService = game:GetService("RunService")
+
 local Rigging = {}
 
 -- Gravity that joint friction values were tuned under.
@@ -317,6 +319,57 @@ function Rigging.disableMotors(model, rigType)
 	end
 
 	return motors
+end
+
+function Rigging.disableParticleEmittersAndFadeOut(character, duration)
+	local descendants = character:GetDescendants()
+	local transparencies = {}
+	for _, instance in pairs(descendants) do
+		if instance:IsA("BasePart") or instance:IsA("Decal") then
+			table.insert(transparencies, { instance, instance.LocalTransparencyModifier })
+		end
+		if instance:IsA("ParticleEmitter") then
+			instance.Enabled = false
+		end
+	end
+	local t = 0
+	while t < duration do
+		-- Using heartbeat because we want to update just before rendering next frame, and not
+		-- block the render thread kicking off (as RenderStepped does)
+		local dt = RunService.Heartbeat:Wait()
+		t = t + dt
+		local alpha = math.min(t / duration, 1)
+		for _, pair in pairs(transparencies) do
+			local p, a = unpack(pair)
+			p.LocalTransparencyModifier = (1 - alpha) * a + alpha * 1
+		end
+	end
+end
+
+function Rigging.easeJointFriction(character, duration)
+	local descendants = character:GetDescendants()
+	local gravityScale = workspace.Gravity / 196.2
+	local frictionJoints = {}
+	for _, v in pairs(descendants) do
+		if v:IsA("BallSocketConstraint") and v.Name == BALL_SOCKET_NAME then
+			local current = v.MaxFrictionTorque
+			-- Keep the torso and neck a little stiffer...
+			local scale = (v.Parent.Name == "UpperTorso" or v.Parent.Name == "Head") and 0.5 or 0.05
+			local next = current * scale * gravityScale
+			frictionJoints[v] = { v, current, next }
+		end
+	end
+	local t = 0
+	while t < duration do
+		-- Using stepped because we want to update just before physics sim
+		local _, dt = RunService.Stepped:Wait()
+		t = t + dt
+		local alpha = math.min(t / duration, 1)
+		for _, tuple in pairs(frictionJoints) do
+			local bsc, a, b = unpack(tuple)
+			bsc.MaxFrictionTorque = (1 - alpha) * a + alpha * b
+		end
+	end
 end
 
 return Rigging

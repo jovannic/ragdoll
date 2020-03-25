@@ -1,6 +1,5 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local DefaultRagdoll = ReplicatedStorage:WaitForChild("DefaultRagdoll", 120)
 local Rigging = require(DefaultRagdoll:WaitForChild("Rigging", 120))
@@ -25,55 +24,6 @@ local localPlayer = Players.LocalPlayer
 	end
 
 	return shunt.Event:Wait()
-end
-
-local function disableParticleEmittersAndFadeOut(descendants, duration)
-	local transparencies = {}
-	for _, instance in pairs(descendants) do
-		if instance:IsA("BasePart") or instance:IsA("Decal") then
-			table.insert(transparencies, { instance, instance.LocalTransparencyModifier })
-		end
-		if instance:IsA("ParticleEmitter") then
-			instance.Enabled = false
-		end
-	end
-	local t = 0
-	while t < duration do
-		-- Using heartbeat because we want to update just before rendering next frame, and not
-		-- block the render thread kicking off (as RenderStepped does)
-		local dt = RunService.Heartbeat:Wait()
-		t = t + dt
-		local alpha = math.min(t / duration, 1)
-		for _, pair in pairs(transparencies) do
-			local p, a = unpack(pair)
-			p.LocalTransparencyModifier = (1 - alpha) * a + alpha * 1
-		end
-	end
-end
-
-local function easeJointFriction(descendants, duration)
-	local gravityScale = workspace.Gravity / 196.2
-		local frictionJoints = {}
-		for _, v in pairs(descendants) do
-			if v:IsA("BallSocketConstraint") and v.Name == "RagdollBallSocket" then
-				local current = v.MaxFrictionTorque
-				-- Keep the torso and neck a little stiffer...
-				local scale = (v.Parent.Name == "UpperTorso" or v.Parent.Name == "Head") and 0.5 or 0.05
-				local next = current * scale * gravityScale
-				frictionJoints[v] = { v, current, next }
-			end
-		end
-		local t = 0
-		while t < duration do
-			-- Using stepped because we want to update just before physics sim
-			local _, dt = RunService.Stepped:Wait()
-			t = t + dt
-			local alpha = math.min(t / duration, 1)
-			for _, tuple in pairs(frictionJoints) do
-				local bsc, a, b = unpack(tuple)
-				bsc.MaxFrictionTorque = (1 - alpha) * a + alpha * b
-			end
-		end
 end
 
 local function onOwnedHumanoidDeath(character, humanoid)
@@ -124,7 +74,7 @@ local function onOwnedHumanoidDeath(character, humanoid)
 	wait(0.1)
 
 	-- gradually give up...
-	easeJointFriction(character:GetDescendants(), 0.5)
+	Rigging.easeJointFriction(character, 1.0)
 end
 
 local function humanoidReady(character, humanoid)
@@ -140,9 +90,9 @@ local function humanoidReady(character, humanoid)
 		-- Assume death is final
 		disconnect()
 		-- Any character: handle fade out on death
-		delay(1.5, function()
+		delay(2.0, function()
 			-- fade into the mist...
-			disableParticleEmittersAndFadeOut(character:GetDescendants(), 0.4)
+			Rigging.disableParticleEmittersAndFadeOut(character, 0.4)
 		end)
 		-- Just my character: initiate ragdoll and do friction easing 
 		if Players:GetPlayerFromCharacter(character) == localPlayer then
