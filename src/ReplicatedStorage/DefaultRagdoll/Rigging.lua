@@ -348,14 +348,13 @@ end
 
 function Rigging.easeJointFriction(character, duration)
 	local descendants = character:GetDescendants()
-	local gravityScale = workspace.Gravity / 196.2
 	local frictionJoints = {}
 	for _, v in pairs(descendants) do
 		if v:IsA("BallSocketConstraint") and v.Name == BALL_SOCKET_NAME then
 			local current = v.MaxFrictionTorque
 			-- Keep the torso and neck a little stiffer...
 			local scale = (v.Parent.Name == "UpperTorso" or v.Parent.Name == "Head") and 0.5 or 0.05
-			local next = current * scale * gravityScale
+			local next = current * scale
 			frictionJoints[v] = { v, current, next }
 		end
 	end
