@@ -74,7 +74,7 @@ local function onOwnedHumanoidDeath(character, humanoid)
 	wait(0.1)
 
 	-- gradually give up...
-	Rigging.easeJointFriction(character, 1.0)
+	Rigging.easeJointFriction(character, 0.85)
 end
 
 local function humanoidReady(character, humanoid)
