@@ -356,11 +356,17 @@ function Rigging.disableMotors(model, rigType)
 end
 
 function Rigging.disableParticleEmittersAndFadeOut(character, duration)
+	if RunService.IsServer() then
+		-- This causes a lot of unnecesarry replicated property changes
+		warn("disableParticleEmittersAndFadeOut should not be called on the server.")
+		return
+	end
+
 	local descendants = character:GetDescendants()
 	local transparencies = {}
 	for _, instance in pairs(descendants) do
 		if instance:IsA("BasePart") or instance:IsA("Decal") then
-			table.insert(transparencies, { instance, instance.LocalTransparencyModifier })
+			table.insert(transparencies, { instance, instance.Transparency })
 		end
 		if instance:IsA("ParticleEmitter") then
 			instance.Enabled = false
@@ -375,7 +381,7 @@ function Rigging.disableParticleEmittersAndFadeOut(character, duration)
 		local alpha = math.min(t / duration, 1)
 		for _, pair in pairs(transparencies) do
 			local p, a = unpack(pair)
-			p.LocalTransparencyModifier = (1 - alpha) * a + alpha * 1
+			p.Transparency = (1 - alpha) * a + alpha * 1
 		end
 	end
 end
