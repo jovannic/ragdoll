@@ -34,8 +34,8 @@ local ANKLE_LIMITS = {
 
 local ELBOW_LIMITS = {
 	-- Elbow is basically a hinge, but allow some twist for Supination and Pronation
-	UpperAngle = 30; 
-	TwistLowerAngle = 0;
+	UpperAngle = 20; 
+	TwistLowerAngle = 5;
 	TwistUpperAngle = 120;
 	ReferenceMass = 0.70196455717087
 }
@@ -50,7 +50,7 @@ local WRIST_LIMITS = {
 local KNEE_LIMITS = {
 	UpperAngle = 5;
 	TwistLowerAngle = -120;
-	TwistUpperAngle = 0;
+	TwistUpperAngle = 5;
 	ReferenceMass = 0.65389388799667;
 }
 
@@ -65,7 +65,7 @@ local SHOULDER_LIMITS = {
 local HIP_LIMITS = {
 	UpperAngle = 40;
 	TwistLowerAngle = -5;
-	TwistUpperAngle = 100;
+	TwistUpperAngle = 80;
 	FrictionTorque = 600;
 	ReferenceMass = 1.9175016880035;
 }
