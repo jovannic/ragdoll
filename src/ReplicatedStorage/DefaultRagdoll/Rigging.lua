@@ -58,6 +58,7 @@ local SHOULDER_LIMITS = {
 	UpperAngle = 60;
 	TwistLowerAngle = -60;
 	TwistUpperAngle = 175;
+	FrictionTorque = 600;
 	ReferenceMass = 0.90918225049973;
 }
 
@@ -65,6 +66,7 @@ local HIP_LIMITS = {
 	UpperAngle = 40;
 	TwistLowerAngle = -5;
 	TwistUpperAngle = 100;
+	FrictionTorque = 600;
 	ReferenceMass = 1.9175016880035;
 }
 
