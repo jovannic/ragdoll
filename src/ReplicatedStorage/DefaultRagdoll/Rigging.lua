@@ -50,14 +50,14 @@ local WRIST_LIMITS = {
 local KNEE_LIMITS = {
 	UpperAngle = 5;
 	TwistLowerAngle = -120;
-	TwistUpperAngle = 5;
+	TwistUpperAngle = -5;
 	ReferenceMass = 0.65389388799667;
 }
 
 local SHOULDER_LIMITS = {
-	UpperAngle = 60;
-	TwistLowerAngle = -60;
-	TwistUpperAngle = 175;
+	UpperAngle = 110;
+	TwistLowerAngle = -85;
+	TwistUpperAngle = 85;
 	FrictionTorque = 600;
 	ReferenceMass = 0.90918225049973;
 }
@@ -88,17 +88,33 @@ local R6_HIP_LIMITS = {
 	TwistUpperAngle = 15;
 }
 
+local ZERO = Vector3.new()
+local UP = Vector3.new(0, 1, 0)
+local DOWN = Vector3.new(0, -1, 0)
+local RIGHT = Vector3.new(1, 0, 0)
+local LEFT = Vector3.new(-1, 0, 0)
+
+-- To model shoulder cone and twist limits correctly we really need the primary axis of the UpperArm
+-- to be going down the limb. the waist and neck joints attachments actually have the same problem
+-- of non-ideal axis orientation, but it's not as noticable there since the limits for natural
+-- motion are tighter for those joints anyway.
+local R15_ADDITIONAL_ATTACHMENTS = {
+	{"UpperTorso", "RightShoulderRagdollAttachment", CFrame.fromMatrix(ZERO, RIGHT, UP), "RightShoulderRigAttachment"},
+	{"RightUpperArm", "RightShoulderRagdollAttachment", CFrame.fromMatrix(ZERO, DOWN, RIGHT), "RightShoulderRigAttachment"},
+	{"UpperTorso", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(ZERO, LEFT, UP), "LeftShoulderRigAttachment"},
+	{"LeftUpperArm", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(ZERO, DOWN, LEFT), "LeftShoulderRigAttachment"},
+}
 -- { { parentPart, childPart, attachmentName, limits }, ... }
 local R15_RAGDOLL_RIG = {
 	{"UpperTorso", "Head", "NeckRigAttachment", HEAD_LIMITS},
 
 	{"LowerTorso", "UpperTorso", "WaistRigAttachment", WAIST_LIMITS},
 
-	{"UpperTorso", "LeftUpperArm", "LeftShoulderRigAttachment", SHOULDER_LIMITS},
+	{"UpperTorso", "LeftUpperArm", "LeftShoulderRagdollAttachment", SHOULDER_LIMITS},
 	{"LeftUpperArm", "LeftLowerArm", "LeftElbowRigAttachment", ELBOW_LIMITS},
 	{"LeftLowerArm", "LeftHand", "LeftWristRigAttachment", WRIST_LIMITS},
 
-	{"UpperTorso", "RightUpperArm", "RightShoulderRigAttachment", SHOULDER_LIMITS},
+	{"UpperTorso", "RightUpperArm", "RightShoulderRagdollAttachment", SHOULDER_LIMITS},
 	{"RightUpperArm", "RightLowerArm", "RightElbowRigAttachment", ELBOW_LIMITS},
 	{"RightLowerArm", "RightHand", "RightWristRigAttachment", WRIST_LIMITS},
 
@@ -162,19 +178,19 @@ local R15_MOTOR6DS = {
 
 -- R6 has hard coded part sizes and does not have a full set of rig Attachments.
 R6_ADDITIONAL_ATTACHMENTS = {
-	{"Head", "NeckAttachment", Vector3.new(0, -0.5, 0)},
+	{"Head", "NeckAttachment", CFrame.new(0, -0.5, 0)},
 
-	{"Torso", "RightShoulderRagdollAttachment", Vector3.new(1, 0.5, 0)},
-	{"Right Arm", "RightShoulderRagdollAttachment", Vector3.new(-0.5, 0.5, 0)},
+	{"Torso", "RightShoulderRagdollAttachment", CFrame.new(1, 0.5, 0)},
+	{"Right Arm", "RightShoulderRagdollAttachment", CFrame.new(-0.5, 0.5, 0)},
 
-	{"Torso", "LeftShoulderRagdollAttachment", Vector3.new(-1, 0.5, 0)},
-	{"Left Arm", "LeftShoulderRagdollAttachment", Vector3.new(0.5, 0.5, 0)},
+	{"Torso", "LeftShoulderRagdollAttachment", CFrame.new(-1, 0.5, 0)},
+	{"Left Arm", "LeftShoulderRagdollAttachment", CFrame.new(0.5, 0.5, 0)},
 
-	{"Torso", "RightHipAttachment", Vector3.new(0.5, -1, 0)},
-	{"Right Leg", "RightHipAttachment", Vector3.new(0, 1, 0)},
+	{"Torso", "RightHipAttachment", CFrame.new(0.5, -1, 0)},
+	{"Right Leg", "RightHipAttachment", CFrame.new(0, 1, 0)},
 
-	{"Torso", "LeftHipAttachment", Vector3.new(-0.5, -1, 0)},
-	{"Left Leg", "LeftHipAttachment", Vector3.new(0, 1, 0)},
+	{"Torso", "LeftHipAttachment", CFrame.new(-0.5, -1, 0)},
+	{"Left Leg", "LeftHipAttachment", CFrame.new(0, 1, 0)},
 }
 local R6_RAGDOLL_RIG = {
 	{"Head", "Torso", "NeckAttachment", R6_HEAD_LIMITS},
@@ -241,6 +257,34 @@ local function createNoCollide(model, part0Name, part1Name)
 	end
 end
 
+local function createAdditionalAttachments(model, attachments)
+	for _, attachmentParams in ipairs(attachments) do
+		local part = model:FindFirstChild(attachmentParams[1])
+		if part and part:IsA("BasePart") then
+			local name = attachmentParams[2]
+			if not part:FindFirstChild(name) then
+				local cframe = attachmentParams[3]
+				local baseName = attachmentParams[4]
+				if baseName then
+					local base = part:FindFirstChild(baseName)
+					if base and base:IsA("Attachment") then
+						cframe = base.CFrame * cframe
+					end
+				end
+				local attachment = part:FindFirstChild(name)
+				if not attachment then
+					attachment = Instance.new("Attachment")
+					attachment.Name = name
+					attachment.Parent = part
+					attachment.CFrame = cframe
+				elseif attachment:IsA("Attachment") then
+					attachment.CFrame = cframe
+				end
+			end
+		end
+	end
+end
+
 local function createRigJoints(model, rig, noCollides)
 	for parentName, params in pairs(rig) do
 		createRigJoint(model, unpack(params))
@@ -268,22 +312,10 @@ end
 
 function Rigging.createRagdollJoints(model, rigType)
 	if rigType == Enum.HumanoidRigType.R6 then
-		-- Add additional "missing" attachments for R6
-		for _, attachmentParams in ipairs(R6_ADDITIONAL_ATTACHMENTS) do
-			local part = model:FindFirstChild(attachmentParams[1])
-			if part and part:IsA("BasePart") then
-				local name = attachmentParams[2]
-				if not part:FindFirstChild(name) then
-					local attachment = Instance.new("Attachment")
-					attachment.Name = name
-					attachment.Position = attachmentParams[3]
-					attachment.Parent = part
-				end
-			end
-		end
-
+		createAdditionalAttachments(model, R6_ADDITIONAL_ATTACHMENTS)
 		createRigJoints(model, R6_RAGDOLL_RIG, R6_NO_COLLIDES)
 	elseif rigType == Enum.HumanoidRigType.R15 then
+		createAdditionalAttachments(model, R15_ADDITIONAL_ATTACHMENTS)
 		createRigJoints(model, R15_RAGDOLL_RIG, R15_NO_COLLIDES)
 	else
 		error("unknown rig type")
