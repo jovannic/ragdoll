@@ -356,17 +356,16 @@ function Rigging.disableMotors(model, rigType)
 end
 
 function Rigging.disableParticleEmittersAndFadeOut(character, duration)
-	if RunService.IsServer() then
+	if RunService:IsServer() then
 		-- This causes a lot of unnecesarry replicated property changes
-		warn("disableParticleEmittersAndFadeOut should not be called on the server.")
-		return
+		error("disableParticleEmittersAndFadeOut should not be called on the server.", 2)
 	end
 
 	local descendants = character:GetDescendants()
 	local transparencies = {}
 	for _, instance in pairs(descendants) do
 		if instance:IsA("BasePart") or instance:IsA("Decal") then
-			table.insert(transparencies, { instance, instance.Transparency })
+			transparencies[instance] = instance.Transparency
 		end
 		if instance:IsA("ParticleEmitter") then
 			instance.Enabled = false
@@ -379,8 +378,7 @@ function Rigging.disableParticleEmittersAndFadeOut(character, duration)
 		local dt = RunService.Heartbeat:Wait()
 		t = t + dt
 		local alpha = math.min(t / duration, 1)
-		for _, pair in pairs(transparencies) do
-			local p, a = unpack(pair)
+		for p, a in pairs(transparencies) do
 			p.Transparency = (1 - alpha) * a + alpha * 1
 		end
 	end
@@ -405,8 +403,8 @@ function Rigging.easeJointFriction(character, duration)
 		t = t + dt
 		local alpha = math.min(t / duration, 1)
 		for _, tuple in pairs(frictionJoints) do
-			local bsc, a, b = unpack(tuple)
-			bsc.MaxFrictionTorque = (1 - alpha) * a + alpha * b
+			local ballSocket, a, b = unpack(tuple)
+			ballSocket.MaxFrictionTorque = (1 - alpha) * a + alpha * b
 		end
 	end
 end
