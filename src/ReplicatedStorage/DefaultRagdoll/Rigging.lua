@@ -10,82 +10,82 @@ local REFERENCE_GRAVITY = 196.2
 local DEFAULT_MAX_FRICTION_TORQUE = 500
 
 local HEAD_LIMITS = {
-	UpperAngle = 45;
-	TwistLowerAngle = -40;
-	TwistUpperAngle = 40;
-	FrictionTorque = 400;
-	ReferenceMass = 1.0249234437943;
+	UpperAngle = 45,
+	TwistLowerAngle = -40,
+	TwistUpperAngle = 40,
+	FrictionTorque = 400,
+	ReferenceMass = 1.0249234437943,
 }
 
 local WAIST_LIMITS = {
-	UpperAngle = 20;
-	TwistLowerAngle = -40;
-	TwistUpperAngle = 20;
-	FrictionTorque = 750;
-	ReferenceMass = 2.861558675766;
+	UpperAngle = 20,
+	TwistLowerAngle = -40,
+	TwistUpperAngle = 20,
+	FrictionTorque = 750,
+	ReferenceMass = 2.861558675766,
 }
 
 local ANKLE_LIMITS = {
-	UpperAngle = 10;
-	TwistLowerAngle = -10;
-	TwistUpperAngle = 10;
-	ReferenceMass = 0.43671694397926;
+	UpperAngle = 10,
+	TwistLowerAngle = -10,
+	TwistUpperAngle = 10,
+	ReferenceMass = 0.43671694397926,
 }
 
 local ELBOW_LIMITS = {
 	-- Elbow is basically a hinge, but allow some twist for Supination and Pronation
-	UpperAngle = 20; 
-	TwistLowerAngle = 5;
-	TwistUpperAngle = 120;
+	UpperAngle = 20, 
+	TwistLowerAngle = 5,
+	TwistUpperAngle = 120,
 	ReferenceMass = 0.70196455717087
 }
 
 local WRIST_LIMITS = {
-	UpperAngle = 30;
-	TwistLowerAngle = -10;
-	TwistUpperAngle = 10;
-	ReferenceMass = 0.69132566452026;
+	UpperAngle = 30,
+	TwistLowerAngle = -10,
+	TwistUpperAngle = 10,
+	ReferenceMass = 0.69132566452026,
 }
 
 local KNEE_LIMITS = {
-	UpperAngle = 5;
-	TwistLowerAngle = -120;
-	TwistUpperAngle = -5;
-	ReferenceMass = 0.65389388799667;
+	UpperAngle = 5,
+	TwistLowerAngle = -120,
+	TwistUpperAngle = -5,
+	ReferenceMass = 0.65389388799667,
 }
 
 local SHOULDER_LIMITS = {
-	UpperAngle = 110;
-	TwistLowerAngle = -85;
-	TwistUpperAngle = 85;
-	FrictionTorque = 600;
-	ReferenceMass = 0.90918225049973;
+	UpperAngle = 110,
+	TwistLowerAngle = -85,
+	TwistUpperAngle = 85,
+	FrictionTorque = 600,
+	ReferenceMass = 0.90918225049973,
 }
 
 local HIP_LIMITS = {
-	UpperAngle = 40;
-	TwistLowerAngle = -5;
-	TwistUpperAngle = 80;
-	FrictionTorque = 600;
-	ReferenceMass = 1.9175016880035;
+	UpperAngle = 40,
+	TwistLowerAngle = -5,
+	TwistUpperAngle = 80,
+	FrictionTorque = 600,
+	ReferenceMass = 1.9175016880035,
 }
 
 local R6_HEAD_LIMITS = {
-	UpperAngle = 30;
-	TwistLowerAngle = -60;
-	TwistUpperAngle = 60;
+	UpperAngle = 30,
+	TwistLowerAngle = -60,
+	TwistUpperAngle = 60,
 }
 
 local R6_SHOULDER_LIMITS = {
-	UpperAngle = 90;
-	TwistLowerAngle = -30;
-	TwistUpperAngle = 175;
+	UpperAngle = 90,
+	TwistLowerAngle = -30,
+	TwistUpperAngle = 175,
 }
 
 local R6_HIP_LIMITS = {
-	UpperAngle = 40;
-	TwistLowerAngle = -120;
-	TwistUpperAngle = 15;
+	UpperAngle = 40,
+	TwistLowerAngle = -120,
+	TwistUpperAngle = 15,
 }
 
 local ZERO = Vector3.new()
