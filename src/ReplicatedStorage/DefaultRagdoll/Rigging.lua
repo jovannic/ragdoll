@@ -37,7 +37,7 @@ local ELBOW_LIMITS = {
 	UpperAngle = 20, 
 	TwistLowerAngle = 5,
 	TwistUpperAngle = 120,
-	ReferenceMass = 0.70196455717087
+	ReferenceMass = 0.70196455717087,
 }
 
 local WRIST_LIMITS = {
@@ -72,20 +72,20 @@ local HIP_LIMITS = {
 
 local R6_HEAD_LIMITS = {
 	UpperAngle = 30,
-	TwistLowerAngle = -60,
-	TwistUpperAngle = 60,
+	TwistLowerAngle = -40,
+	TwistUpperAngle = 40,
 }
 
 local R6_SHOULDER_LIMITS = {
-	UpperAngle = 90,
-	TwistLowerAngle = -30,
-	TwistUpperAngle = 175,
+	UpperAngle = 110,
+	TwistLowerAngle = -85,
+	TwistUpperAngle = 85,
 }
 
 local R6_HIP_LIMITS = {
 	UpperAngle = 40,
-	TwistLowerAngle = -120,
-	TwistUpperAngle = 15,
+	TwistLowerAngle = -5,
+	TwistUpperAngle = 80,
 }
 
 local V3_ZERO = Vector3.new()
@@ -180,11 +180,11 @@ local R15_MOTOR6DS = {
 local R6_ADDITIONAL_ATTACHMENTS = {
 	{"Head", "NeckAttachment", CFrame.new(0, -0.5, 0)},
 
-	{"Torso", "RightShoulderRagdollAttachment", CFrame.new(1, 0.5, 0)},
-	{"Right Arm", "RightShoulderRagdollAttachment", CFrame.new(-0.5, 0.5, 0)},
+	{"Torso", "RightShoulderRagdollAttachment", CFrame.fromMatrix(Vector3.new(1, 0.5, 0), V3_RIGHT, V3_UP)},
+	{"Right Arm", "RightShoulderRagdollAttachment", CFrame.fromMatrix(Vector3.new(-0.5, 0.5, 0), V3_DOWN, V3_RIGHT)},
 
-	{"Torso", "LeftShoulderRagdollAttachment", CFrame.new(-1, 0.5, 0)},
-	{"Left Arm", "LeftShoulderRagdollAttachment", CFrame.new(0.5, 0.5, 0)},
+	{"Torso", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(Vector3.new(-1, 0.5, 0), V3_LEFT, V3_UP)},
+	{"Left Arm", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(Vector3.new(0.5, 0.5, 0), V3_DOWN, V3_LEFT)},
 
 	{"Torso", "RightHipAttachment", CFrame.new(0.5, -1, 0)},
 	{"Right Leg", "RightHipAttachment", CFrame.new(0, 1, 0)},
