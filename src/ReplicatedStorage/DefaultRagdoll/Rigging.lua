@@ -193,13 +193,13 @@ local R6_ADDITIONAL_ATTACHMENTS = {
 	{"Left Leg", "LeftHipAttachment", CFrame.new(0, 1, 0)},
 }
 local R6_RAGDOLL_RIG = {
-	{"Head", "Torso", "NeckAttachment", R6_HEAD_LIMITS},
+	{"Torso", "Head", "NeckAttachment", R6_HEAD_LIMITS},
+	
+	{"Torso", "Left Leg", "LeftHipAttachment", R6_HIP_LIMITS},
+	{"Torso", "Right Leg", "RightHipAttachment", R6_HIP_LIMITS},
 
-	{"Left Leg", "Torso", "LeftHipAttachment", R6_HIP_LIMITS},
-	{"Right Leg", "Torso", "RightHipAttachment", R6_HIP_LIMITS},
-
-	{"Left Arm", "Torso", "LeftShoulderRagdollAttachment", R6_SHOULDER_LIMITS},
-	{"Right Arm", "Torso", "RightShoulderRagdollAttachment", R6_SHOULDER_LIMITS},
+	{"Torso", "Left Arm", "LeftShoulderRagdollAttachment", R6_SHOULDER_LIMITS},
+	{"Torso", "Right Arm", "RightShoulderRagdollAttachment", R6_SHOULDER_LIMITS},
 }
 local R6_NO_COLLIDES = {
 	{"Left Leg", "Right Leg"},
@@ -217,15 +217,35 @@ local R6_MOTOR6DS = {
 local BALL_SOCKET_NAME = "RagdollBallSocket"
 local NO_COLLIDE_NAME = "RagdollNoCollision"
 
-local function createRigJoint(model, part0Name, part1Name, attachmentName, limits)
-	local part0 = model:FindFirstChild(part0Name)
-	local part1 = model:FindFirstChild(part1Name)
+-- Index parts by name to save us from many O(n) FindFirstChild searches
+local function indexParts(model)
+	local parts = {}
+	for _, child in ipairs(model:GetChildren()) do
+		if child:IsA("BasePart") then
+			local name = child.name
+			-- Index first, mimicing FindFirstChild
+			if not parts[name] then
+				parts[name] = child
+			end
+		end
+	end
+	return parts
+end
+
+local function createRigJoint(parts, part0Name, part1Name, attachmentName, limits)
+	local part0 = parts[part0Name]
+	local part1 = parts[part1Name]
 	if part0 and part1 then
 		local a0 = part0:FindFirstChild(attachmentName)
 		local a1 = part1:FindFirstChild(attachmentName)
 		if a0 and a1 and a0:IsA("Attachment") and a1:IsA("Attachment") then
-			local constraint = Instance.new("BallSocketConstraint")
-			constraint.Name = BALL_SOCKET_NAME
+			-- Our rigs only have one joint per part (connecting each part to it's parent part), so
+			-- we can re-use it if we have to re-rig that part again.
+			local constraint = part1:FindFirstChild(BALL_SOCKET_NAME)
+			if not constraint then
+				constraint = Instance.new("BallSocketConstraint")
+				constraint.Name = BALL_SOCKET_NAME
+			end
 			constraint.Attachment0 = a0
 			constraint.Attachment1 = a1
 			constraint.LimitsEnabled = true
@@ -245,21 +265,9 @@ local function createRigJoint(model, part0Name, part1Name, attachmentName, limit
 	end
 end
 
-local function createNoCollide(model, part0Name, part1Name)
-	local part0 = model:FindFirstChild(part0Name)
-	local part1 = model:FindFirstChild(part1Name)
-	if part0 and part1 then
-		local constraint = Instance.new("NoCollisionConstraint")
-		constraint.Name = NO_COLLIDE_NAME
-		constraint.Part0 = part0
-		constraint.Part1 = part1
-		constraint.Parent = part0
-	end
-end
-
-local function createAdditionalAttachments(model, attachments)
+local function createAdditionalAttachments(parts, attachments)
 	for _, attachmentParams in ipairs(attachments) do
-		local part = model:FindFirstChild(attachmentParams[1])
+		local part = parts[attachmentParams[1]]
 		if part and part:IsA("BasePart") then
 			local name = attachmentParams[2]
 			if not part:FindFirstChild(name) then
@@ -271,6 +279,7 @@ local function createAdditionalAttachments(model, attachments)
 						cframe = base.CFrame * cframe
 					end
 				end
+				-- The attachment names are unique within a part, so we can re-use
 				local attachment = part:FindFirstChild(name)
 				if not attachment then
 					attachment = Instance.new("Attachment")
@@ -285,12 +294,68 @@ local function createAdditionalAttachments(model, attachments)
 	end
 end
 
-local function createRigJoints(model, rig, noCollides)
+local function createRigJoints(parts, rig)
 	for parentName, params in pairs(rig) do
-		createRigJoint(model, unpack(params))
+		createRigJoint(parts, unpack(params))
 	end
-	for _, params in ipairs(noCollides) do
-		createNoCollide(model, unpack(params))
+end
+
+local function createNoCollides(parts, noCollides)
+	-- This one's trickier to handle for an already rigged character since a part will have multiple
+	-- NoCollide children with the same name. Having fewer unique names is better for
+	-- replication so we suck it up and deal with the complexity here.
+	
+	-- { [Part1] = { [Part0] = true, ... }, ...}
+	local needed = {}
+	-- Following the convention of the Motor6Ds and everything else here we parent the NoCollide to
+	-- Part1, so we start by building the set of Part0s we need a NoCollide with for each Part1
+	for _, namePair in ipairs(noCollides) do
+		local part0Name, part1Name = unpack(namePair)
+		local p0, p1 = parts[part0Name], parts[part1Name]
+		if p0 and p1 then
+			local p0Set = needed[p1]
+			if not p0Set then
+				p0Set = {}
+				needed[p1] = p0Set
+			end
+			p0Set[p0] = true;
+		end
+	end
+
+	-- Go through NoCollides that exist and remove Part0s from the needed set if we already have
+	-- them covered. Gather NoCollides that aren't between parts in the set for resue
+	local reusableNoCollides = {}
+	for part1, neededPart0s in pairs(needed) do
+		local reusables = {}
+		for _, child in ipairs(part1:GetChildren()) do
+			if child:IsA("NoCollisionConstraint") and child.Name == NO_COLLIDE_NAME then
+				local p0 = child.Part0
+				local p1 = child.Part1
+				if p1 == part1 and neededPart0s[p0] then
+					-- If this matches one that we needed, we don't need to create it anymore.
+					neededPart0s[p0] = nil
+				else
+					-- Otherwise we're free to reuse this NoCollide
+					table.insert(reusables, child)
+				end
+			end
+		end
+		reusableNoCollides[part1] = reusables
+	end
+
+	-- Create the remaining NoCollides needed, re-using old ones if possible
+	for part1, neededPart0s in pairs(needed) do
+		local reusables = reusableNoCollides[part1]
+		for part0, _ in pairs(neededPart0s) do
+			local constraint = table.remove(reusables, #reusables)
+			if not constraint then
+				constraint = Instance.new("NoCollisionConstraint")
+			end
+			constraint.Name = NO_COLLIDE_NAME
+			constraint.Part0 = part0
+			constraint.Part1 = part1
+			constraint.Parent = part1
+		end
 	end
 end
 
@@ -311,12 +376,15 @@ local function disableMotorSet(model, motorSet)
 end
 
 function Rigging.createRagdollJoints(model, rigType)
+	local parts = indexParts(model)
 	if rigType == Enum.HumanoidRigType.R6 then
-		createAdditionalAttachments(model, R6_ADDITIONAL_ATTACHMENTS)
-		createRigJoints(model, R6_RAGDOLL_RIG, R6_NO_COLLIDES)
+		createAdditionalAttachments(parts, R6_ADDITIONAL_ATTACHMENTS)
+		createRigJoints(parts, R6_RAGDOLL_RIG)
+		createNoCollides(parts, R6_NO_COLLIDES)
 	elseif rigType == Enum.HumanoidRigType.R15 then
-		createAdditionalAttachments(model, R15_ADDITIONAL_ATTACHMENTS)
-		createRigJoints(model, R15_RAGDOLL_RIG, R15_NO_COLLIDES)
+		createAdditionalAttachments(parts, R15_ADDITIONAL_ATTACHMENTS)
+		createRigJoints(parts, R15_RAGDOLL_RIG)
+		createNoCollides(parts, R15_NO_COLLIDES)
 	else
 		error("unknown rig type", 2)
 	end
@@ -324,6 +392,7 @@ end
 
 function Rigging.removeRagdollJoints(model)
 	for _, descendant in pairs(model:GetDescendants()) do
+		-- Remove BallSockets and NoCollides, leave the additional Attachments
 		if (descendant:IsA("BallSocketConstraint") and descendant.Name == BALL_SOCKET_NAME)
 			or (descendant:IsA("NoCollisionConstraint") and descendant.Name == NO_COLLIDE_NAME)
 		then
@@ -379,7 +448,7 @@ function Rigging.disableParticleEmittersAndFadeOut(character, duration)
 		t = t + dt
 		local alpha = math.min(t / duration, 1)
 		for part, initialTransparency in pairs(transparencies) do
-			part.Transparency = (1 - alpha) * initialTransparency + alpha * 1
+			part.Transparency = (1 - alpha) * initialTransparency + alpha
 		end
 	end
 end
@@ -393,7 +462,7 @@ function Rigging.easeJointFriction(character, duration)
 			local current = v.MaxFrictionTorque
 			-- Keep the torso and neck a little stiffer...
 			local parentName = v.Parent.Name
-			local scale = (parentName.Name == "UpperTorso" or parentName.Name == "Head") and 0.5 or 0.05
+			local scale = (parentName == "UpperTorso" or parentName == "Head") and 0.5 or 0.05
 			local next = current * scale
 			frictionJoints[v] = { v, current, next }
 		end
