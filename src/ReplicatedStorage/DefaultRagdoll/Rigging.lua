@@ -327,7 +327,7 @@ function Rigging.removeRagdollJoints(model)
 		if (descendant:IsA("BallSocketConstraint") and descendant.Name == BALL_SOCKET_NAME)
 			or (descendant:IsA("NoCollisionConstraint") and descendant.Name == NO_COLLIDE_NAME)
 		then
-			descendant.Parent = nil
+			descendant:Destroy()
 		end
 	end
 end
