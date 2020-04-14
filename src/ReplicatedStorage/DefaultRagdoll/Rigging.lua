@@ -177,7 +177,7 @@ local R15_MOTOR6DS = {
 }
 
 -- R6 has hard coded part sizes and does not have a full set of rig Attachments.
-R6_ADDITIONAL_ATTACHMENTS = {
+local R6_ADDITIONAL_ATTACHMENTS = {
 	{"Head", "NeckAttachment", CFrame.new(0, -0.5, 0)},
 
 	{"Torso", "RightShoulderRagdollAttachment", CFrame.new(1, 0.5, 0)},
@@ -275,8 +275,8 @@ local function createAdditionalAttachments(model, attachments)
 				if not attachment then
 					attachment = Instance.new("Attachment")
 					attachment.Name = name
-					attachment.Parent = part
 					attachment.CFrame = cframe
+					attachment.Parent = part
 				elseif attachment:IsA("Attachment") then
 					attachment.CFrame = cframe
 				end
@@ -318,7 +318,7 @@ function Rigging.createRagdollJoints(model, rigType)
 		createAdditionalAttachments(model, R15_ADDITIONAL_ATTACHMENTS)
 		createRigJoints(model, R15_RAGDOLL_RIG, R15_NO_COLLIDES)
 	else
-		error("unknown rig type")
+		error("unknown rig type", 2)
 	end
 end
 
@@ -343,7 +343,7 @@ function Rigging.disableMotors(model, rigType)
 	elseif rigType == Enum.HumanoidRigType.R15 then
 		motors = disableMotorSet(model, R15_MOTOR6DS)
 	else
-		error("unknown rig type")
+		error("unknown rig type", 2)
 	end
 
 	-- Set the root part to non-collide
@@ -378,8 +378,8 @@ function Rigging.disableParticleEmittersAndFadeOut(character, duration)
 		local dt = RunService.Heartbeat:Wait()
 		t = t + dt
 		local alpha = math.min(t / duration, 1)
-		for p, a in pairs(transparencies) do
-			p.Transparency = (1 - alpha) * a + alpha * 1
+		for part, initialTransparency in pairs(transparencies) do
+			part.Transparency = (1 - alpha) * initialTransparency + alpha * 1
 		end
 	end
 end
@@ -391,7 +391,8 @@ function Rigging.easeJointFriction(character, duration)
 		if v:IsA("BallSocketConstraint") and v.Name == BALL_SOCKET_NAME then
 			local current = v.MaxFrictionTorque
 			-- Keep the torso and neck a little stiffer...
-			local scale = (v.Parent.Name == "UpperTorso" or v.Parent.Name == "Head") and 0.5 or 0.05
+			local parentName = v.Parent.Name
+			local scale = (parentName.Name == "UpperTorso" or parentName.Name == "Head") and 0.5 or 0.05
 			local next = current * scale
 			frictionJoints[v] = { v, current, next }
 		end
