@@ -386,6 +386,7 @@ end
 
 function Rigging.easeJointFriction(character, duration)
 	local descendants = character:GetDescendants()
+	-- { { joint, initial friction, end friction }, ... }
 	local frictionJoints = {}
 	for _, v in pairs(descendants) do
 		if v:IsA("BallSocketConstraint") and v.Name == BALL_SOCKET_NAME then
