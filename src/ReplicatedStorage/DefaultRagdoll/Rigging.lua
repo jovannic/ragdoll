@@ -88,21 +88,21 @@ local R6_HIP_LIMITS = {
 	TwistUpperAngle = 15,
 }
 
-local ZERO = Vector3.new()
-local UP = Vector3.new(0, 1, 0)
-local DOWN = Vector3.new(0, -1, 0)
-local RIGHT = Vector3.new(1, 0, 0)
-local LEFT = Vector3.new(-1, 0, 0)
+local V3_ZERO = Vector3.new()
+local V3_UP = Vector3.new(0, 1, 0)
+local V3_DOWN = Vector3.new(0, -1, 0)
+local V3_RIGHT = Vector3.new(1, 0, 0)
+local V3_LEFT = Vector3.new(-1, 0, 0)
 
 -- To model shoulder cone and twist limits correctly we really need the primary axis of the UpperArm
 -- to be going down the limb. the waist and neck joints attachments actually have the same problem
 -- of non-ideal axis orientation, but it's not as noticable there since the limits for natural
 -- motion are tighter for those joints anyway.
 local R15_ADDITIONAL_ATTACHMENTS = {
-	{"UpperTorso", "RightShoulderRagdollAttachment", CFrame.fromMatrix(ZERO, RIGHT, UP), "RightShoulderRigAttachment"},
-	{"RightUpperArm", "RightShoulderRagdollAttachment", CFrame.fromMatrix(ZERO, DOWN, RIGHT), "RightShoulderRigAttachment"},
-	{"UpperTorso", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(ZERO, LEFT, UP), "LeftShoulderRigAttachment"},
-	{"LeftUpperArm", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(ZERO, DOWN, LEFT), "LeftShoulderRigAttachment"},
+	{"UpperTorso", "RightShoulderRagdollAttachment", CFrame.fromMatrix(V3_ZERO, V3_RIGHT, V3_UP), "RightShoulderRigAttachment"},
+	{"RightUpperArm", "RightShoulderRagdollAttachment", CFrame.fromMatrix(V3_ZERO, V3_DOWN, V3_RIGHT), "RightShoulderRigAttachment"},
+	{"UpperTorso", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(V3_ZERO, V3_LEFT, V3_UP), "LeftShoulderRigAttachment"},
+	{"LeftUpperArm", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(V3_ZERO, V3_DOWN, V3_LEFT), "LeftShoulderRigAttachment"},
 }
 -- { { parentPart, childPart, attachmentName, limits }, ... }
 local R15_RAGDOLL_RIG = {
