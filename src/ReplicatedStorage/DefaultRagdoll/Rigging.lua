@@ -320,7 +320,7 @@ local function createNoCollides(parts, noCollides)
 				p0Set = {}
 				needed[p1] = p0Set
 			end
-			p0Set[p0] = true;
+			p0Set[p0] = true
 		end
 	end
 
@@ -349,7 +349,7 @@ local function createNoCollides(parts, noCollides)
 	for part1, neededPart0s in pairs(needed) do
 		local reusables = reusableNoCollides[part1]
 		for part0, _ in pairs(neededPart0s) do
-			local constraint = table.remove(reusables, #reusables)
+			local constraint = table.remove(reusables)
 			if not constraint then
 				constraint = Instance.new("NoCollisionConstraint")
 			end
@@ -437,8 +437,7 @@ function Rigging.disableParticleEmittersAndFadeOut(character, duration)
 	for _, instance in pairs(descendants) do
 		if instance:IsA("BasePart") or instance:IsA("Decal") then
 			transparencies[instance] = instance.Transparency
-		end
-		if instance:IsA("ParticleEmitter") then
+		elseif instance:IsA("ParticleEmitter") then
 			instance.Enabled = false
 		end
 	end
