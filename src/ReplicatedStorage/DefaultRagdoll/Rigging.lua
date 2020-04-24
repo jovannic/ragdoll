@@ -104,7 +104,7 @@ local R15_ADDITIONAL_ATTACHMENTS = {
 	{"UpperTorso", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(V3_ZERO, V3_LEFT, V3_UP), "LeftShoulderRigAttachment"},
 	{"LeftUpperArm", "LeftShoulderRagdollAttachment", CFrame.fromMatrix(V3_ZERO, V3_DOWN, V3_LEFT), "LeftShoulderRigAttachment"},
 }
--- { { parentPart, childPart, attachmentName, limits }, ... }
+-- { { Part0 name (parent), Part1 name (child, parent of joint), attachmentName, limits }, ... }
 local R15_RAGDOLL_RIG = {
 	{"UpperTorso", "Head", "NeckRigAttachment", HEAD_LIMITS},
 
@@ -126,6 +126,7 @@ local R15_RAGDOLL_RIG = {
 	{"RightUpperLeg", "RightLowerLeg", "RightKneeRigAttachment", KNEE_LIMITS},
 	{"RightLowerLeg", "RightFoot", "RightAnkleRigAttachment", ANKLE_LIMITS},
 }
+-- { { Part0 name, Part1 name }, ... }
 local R15_NO_COLLIDES = {
 	{"LowerTorso", "LeftUpperArm"},
 	{"LeftUpperArm", "LeftHand"},
@@ -153,7 +154,7 @@ local R15_NO_COLLIDES = {
 	{"Head", "LeftUpperArm"},
 	{"Head", "RightUpperArm"},
 }
--- DFS tree order
+-- { { Motor6D name, Part name }, ...}, must be in tree order, important for ApplyJointVelocities
 local R15_MOTOR6DS = {
 	{"Waist", "UpperTorso"},
 
@@ -192,9 +193,10 @@ local R6_ADDITIONAL_ATTACHMENTS = {
 	{"Torso", "LeftHipAttachment", CFrame.new(-0.5, -1, 0)},
 	{"Left Leg", "LeftHipAttachment", CFrame.new(0, 1, 0)},
 }
+-- R6 rig tables use the same table structures as R15.
 local R6_RAGDOLL_RIG = {
 	{"Torso", "Head", "NeckAttachment", R6_HEAD_LIMITS},
-	
+
 	{"Torso", "Left Leg", "LeftHipAttachment", R6_HIP_LIMITS},
 	{"Torso", "Right Leg", "RightHipAttachment", R6_HIP_LIMITS},
 
