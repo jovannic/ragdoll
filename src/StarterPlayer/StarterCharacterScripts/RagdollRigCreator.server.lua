@@ -1,8 +1,8 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local DefaultRagdoll = ReplicatedStorage:WaitForChild("DefaultRagdoll", 120)
-local Rigging = require(DefaultRagdoll:WaitForChild("Rigging", 120))
+local DefaultRagdoll = ReplicatedStorage:FindFirstChild("DefaultRagdoll")
+local Rigging = require(DefaultRagdoll:FindFirstChild("Rigging"))
 
  -- wait for the first of the passed signals to fire
  local function waitForFirst(...)

@@ -1,10 +1,10 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local DefaultRagdoll = ReplicatedStorage:WaitForChild("DefaultRagdoll", 300)
+local DefaultRagdoll = ReplicatedStorage:FindFirstChild("DefaultRagdoll")
 
-local Rigging = require(DefaultRagdoll:WaitForChild("Rigging", 300))
-local HumanoidReadyUtil = require(ReplicatedStorage:WaitForChild("HumanoidReadyUtil", 300))
+local Rigging = require(DefaultRagdoll:FindFirstChild("Rigging"))
+local HumanoidReadyUtil = require(ReplicatedStorage:FindFirstChild("HumanoidReadyUtil"))
 
 local localPlayer = Players.LocalPlayer
 
