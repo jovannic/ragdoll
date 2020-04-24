@@ -33,7 +33,7 @@ local function onOwnedHumanoidDeath(character, humanoid)
 	-- to assign us network ownership of before we would start simulating and replicating physics
 	-- data for it, creating an additional round trip hitch on our end for our own character.
 	local motors = Rigging.disableMotors(character, humanoid.RigType)
-	
+
 	-- Apply velocities from animation to the child parts to mantain visual momentum.
 	--
 	-- This should be done on the network owner's side just after disabling the kinematic joint so
@@ -76,7 +76,7 @@ HumanoidReadyUtil.registerHumanoidReady(function(player, character, humanoid)
 			-- fade into the mist...
 			Rigging.disableParticleEmittersAndFadeOut(character, 0.4)
 		end)
-		-- Just my character: initiate ragdoll and do friction easing 
+		-- Just my character: initiate ragdoll and do friction easing
 		if player == localPlayer then
 			onOwnedHumanoidDeath(character, humanoid)
 		end

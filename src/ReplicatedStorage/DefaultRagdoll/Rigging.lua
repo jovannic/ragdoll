@@ -34,7 +34,7 @@ local ANKLE_LIMITS = {
 
 local ELBOW_LIMITS = {
 	-- Elbow is basically a hinge, but allow some twist for Supination and Pronation
-	UpperAngle = 20, 
+	UpperAngle = 20,
 	TwistLowerAngle = 5,
 	TwistUpperAngle = 120,
 	ReferenceMass = 0.70196455717087,
@@ -306,7 +306,7 @@ local function createNoCollides(parts, noCollides)
 	-- This one's trickier to handle for an already rigged character since a part will have multiple
 	-- NoCollide children with the same name. Having fewer unique names is better for
 	-- replication so we suck it up and deal with the complexity here.
-	
+
 	-- { [Part1] = { [Part0] = true, ... }, ...}
 	local needed = {}
 	-- Following the convention of the Motor6Ds and everything else here we parent the NoCollide to
