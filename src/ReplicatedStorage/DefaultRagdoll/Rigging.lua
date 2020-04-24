@@ -234,35 +234,38 @@ local function indexParts(model)
 	return parts
 end
 
-local function createRigJoint(parts, part0Name, part1Name, attachmentName, limits)
-	local part0 = parts[part0Name]
-	local part1 = parts[part1Name]
-	if part0 and part1 then
-		local a0 = part0:FindFirstChild(attachmentName)
-		local a1 = part1:FindFirstChild(attachmentName)
-		if a0 and a1 and a0:IsA("Attachment") and a1:IsA("Attachment") then
-			-- Our rigs only have one joint per part (connecting each part to it's parent part), so
-			-- we can re-use it if we have to re-rig that part again.
-			local constraint = part1:FindFirstChild(BALL_SOCKET_NAME)
-			if not constraint then
-				constraint = Instance.new("BallSocketConstraint")
-				constraint.Name = BALL_SOCKET_NAME
+local function createRigJoints(parts, rig)
+	for _, params in ipairs(rig) do
+		local part0Name, part1Name, attachmentName, limits = unpack(params)
+		local part0 = parts[part0Name]
+		local part1 = parts[part1Name]
+		if part0 and part1 then
+			local a0 = part0:FindFirstChild(attachmentName)
+			local a1 = part1:FindFirstChild(attachmentName)
+			if a0 and a1 and a0:IsA("Attachment") and a1:IsA("Attachment") then
+				-- Our rigs only have one joint per part (connecting each part to it's parent part), so
+				-- we can re-use it if we have to re-rig that part again.
+				local constraint = part1:FindFirstChild(BALL_SOCKET_NAME)
+				if not constraint then
+					constraint = Instance.new("BallSocketConstraint")
+					constraint.Name = BALL_SOCKET_NAME
+				end
+				constraint.Attachment0 = a0
+				constraint.Attachment1 = a1
+				constraint.LimitsEnabled = true
+				constraint.UpperAngle = limits.UpperAngle
+				constraint.TwistLimitsEnabled = true
+				constraint.TwistLowerAngle = limits.TwistLowerAngle
+				constraint.TwistUpperAngle = limits.TwistUpperAngle
+				-- Scale constant torque limit for joint friction relative to gravity and the mass of
+				-- the body part.
+				local gravityScale = workspace.Gravity / REFERENCE_GRAVITY
+				local referenceMass = limits.ReferenceMass
+				local massScale = referenceMass and (part1:GetMass() / referenceMass) or 1
+				local maxTorque = limits.FrictionTorque or DEFAULT_MAX_FRICTION_TORQUE
+				constraint.MaxFrictionTorque = maxTorque * massScale * gravityScale
+				constraint.Parent = part1
 			end
-			constraint.Attachment0 = a0
-			constraint.Attachment1 = a1
-			constraint.LimitsEnabled = true
-			constraint.UpperAngle = limits.UpperAngle
-			constraint.TwistLimitsEnabled = true
-			constraint.TwistLowerAngle = limits.TwistLowerAngle
-			constraint.TwistUpperAngle = limits.TwistUpperAngle
-			-- Scale constant torque limit for joint friction relative to gravity and the mass of
-			-- the body part.
-			local gravityScale = workspace.Gravity / REFERENCE_GRAVITY
-			local referenceMass = limits.ReferenceMass
-			local massScale = referenceMass and (part1:GetMass() / referenceMass) or 1
-			local maxTorque = limits.FrictionTorque or DEFAULT_MAX_FRICTION_TORQUE
-			constraint.MaxFrictionTorque = maxTorque * massScale * gravityScale
-			constraint.Parent = part1
 		end
 	end
 end
@@ -293,12 +296,6 @@ local function createAdditionalAttachments(parts, attachments)
 				end
 			end
 		end
-	end
-end
-
-local function createRigJoints(parts, rig)
-	for parentName, params in pairs(rig) do
-		createRigJoint(parts, unpack(params))
 	end
 end
 
