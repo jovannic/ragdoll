@@ -272,26 +272,25 @@ end
 
 local function createAdditionalAttachments(parts, attachments)
 	for _, attachmentParams in ipairs(attachments) do
-		local part = parts[attachmentParams[1]]
-		if part and part:IsA("BasePart") then
-			local name = attachmentParams[2]
-			if not part:FindFirstChild(name) then
-				local cframe = attachmentParams[3]
-				local baseName = attachmentParams[4]
-				if baseName then
-					local base = part:FindFirstChild(baseName)
+		local partName, attachmentName, cframe, baseAttachmentName = unpack(attachmentParams)
+		local part = parts[partName]
+		if part then
+			local attachment = part:FindFirstChild(attachmentName)
+			-- Create or update existing attachment
+			if not attachment or attachment:IsA("Attachment") then
+				if baseAttachmentName then
+					local base = part:FindFirstChild(baseAttachmentName)
 					if base and base:IsA("Attachment") then
 						cframe = base.CFrame * cframe
 					end
 				end
 				-- The attachment names are unique within a part, so we can re-use
-				local attachment = part:FindFirstChild(name)
 				if not attachment then
 					attachment = Instance.new("Attachment")
-					attachment.Name = name
+					attachment.Name = attachmentName
 					attachment.CFrame = cframe
 					attachment.Parent = part
-				elseif attachment:IsA("Attachment") then
+				else
 					attachment.CFrame = cframe
 				end
 			end
